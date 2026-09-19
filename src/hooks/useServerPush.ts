@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import i18n from '@/lib/i18n'
 import { getAllAccounts } from '@/features/caldav/sync/accountStorage'
 import {
+  confirmServerPush,
   enableServerPushWithTest,
   isRegistered,
   isStandalone,
@@ -23,19 +24,30 @@ function dismissed(): boolean {
 }
 
 /**
- * Offers once, in a toast, the reminders of an account whose server sends them
+ * On every run, hands the subscriptions this browser already gave back to
+ * their servers, so that the page's own reminders stand down only for the
+ * accounts whose server really sends them (useServerPushStore). Then offers
+ * once, in a toast, the reminders of an account whose server sends them
  * as Web Push and that this browser is not subscribed to. The offer is for a
  * phone and for the installed app: in a tab on a desktop it would hang over
  * the calendar of someone who only came to look, and the settings still have
  * it. "Not now" is remembered.
  */
-export function useServerPushOffer(): void {
+export function useServerPush(): void {
   useEffect(() => {
-    if (pushAvailability() !== 'ok' || dismissed()) return
-    if (!isStandalone() && !matchMedia('(pointer: coarse)').matches) return
-
+    if (pushAvailability() !== 'ok') return
     let cancelled = false
+
+    void (async () => {
+      for (const account of getAllAccounts()) {
+        if (cancelled) return
+        await confirmServerPush(account)
+      }
+    })()
+
+    const offering = !dismissed() && (isStandalone() || matchMedia('(pointer: coarse)').matches)
     const timer = setTimeout(() => {
+      if (!offering) return
       void (async () => {
         for (const account of getAllAccounts()) {
           // Fetched before the tap: Safari refuses to subscribe once the
