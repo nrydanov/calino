@@ -403,6 +403,20 @@
       "desc": "Afspil en lyd, når begivenheder snart starter",
       "ariaLabel": "Lydalarmer"
     },
+    "server": "Påmindelser fra serveren",
+    "serverPush": {
+      "desc": "Din server sender påmindelser som notifikationer, også når Calino er lukket.",
+      "descOn": "Slået til i denne browser.",
+      "descInstallFirst": "Føj Calino til hjemmeskærmen, åbn den derfra og slå dette til i den app.",
+      "turnOn": "Slå til",
+      "sendTest": "Send test",
+      "enabled": "Påmindelser fra serveren er slået til. En testnotifikation er på vej.",
+      "failed": "Kunne ikke slå påmindelser fra serveren til: {{error}}",
+      "testSent": "Testnotifikation sendt.",
+      "testFailed": "Kunne ikke sende en testnotifikation: {{error}}",
+      "offer": "Få påmindelser fra {{name}}, også når Calino er lukket?",
+      "notNow": "Ikke nu"
+    },
     "deviceCalendar": "Enhedskalender",
     "calendarMirror": {
       "label": "Synkronisér med Android-kalender (beta)",
