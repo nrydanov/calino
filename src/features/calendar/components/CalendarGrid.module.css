@@ -251,6 +251,15 @@
   background: var(--accent-strong, var(--accent));
   color: var(--accent-contrast, #fff);
   font-weight: 600;
+  /* Inside a disc the eye measures the ink, not the box. Tabular figures give
+     "1" a wide left bearing, which pushes a number like 18 to the right, and
+     a line box keeps room for descenders that figures do not have, which
+     pushes it down. Proportional figures and a line of one em, lifted by half
+     a pixel, put the ink in the middle. */
+  font-variant-numeric: proportional-nums;
+  line-height: 1;
+  box-sizing: border-box;
+  padding-bottom: 1px;
 }
 
 /* ---- Day Header ---- */
