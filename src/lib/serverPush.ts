@@ -14,6 +14,7 @@
 import { basicAuthHeader } from '@/features/caldav/client/basicAuth'
 import { getCredentialById } from '@/features/caldav/client/credentials'
 import type { CalDAVAccount } from '@/features/caldav/types'
+import { useServerPushStore } from '@/store/serverPushStore'
 
 const WORKER_URL = '/push-sw.js'
 const WORKER_SCOPE = '/push-sw/'
@@ -152,6 +153,19 @@ export async function enableServerPush(account: CalDAVAccount, publicKey: string
   const subscription =
     (await manager.getSubscription()) ??
     (await manager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) }))
+  await handOver(account, base, subscription)
+}
+
+/**
+ * Gives the subscription to the account's server, which replaces any entry for
+ * the same endpoint, and records that the server now sends this account's
+ * reminders to this browser.
+ */
+async function handOver(
+  account: CalDAVAccount,
+  base: string,
+  subscription: PushSubscription
+): Promise<void> {
   const response = await fetch(`${base}subscribe`, {
     method: 'POST',
     headers: {
@@ -162,6 +176,28 @@ export async function enableServerPush(account: CalDAVAccount, publicKey: string
   })
   if (!response.ok) throw new Error(`the server answered ${response.status}`)
   rememberEndpoint(account.id, subscription.endpoint)
+  useServerPushStore.getState().markServerOwned(account.id)
+}
+
+/**
+ * Hands this browser's existing subscription to the account's server again,
+ * once per run. The browser only remembers having given it; the server may
+ * have dropped it since (an expired subscription, a lost state file). Only a
+ * server that accepts it again takes the account's reminders over from the
+ * page. Returns whether it did; asks for no permission and subscribes to
+ * nothing new.
+ */
+export async function confirmServerPush(account: CalDAVAccount): Promise<boolean> {
+  const base = pushBase(account)
+  if (!base || !(await isRegistered(account))) return false
+  const subscription = await (await pushManager(false))?.getSubscription()
+  if (!subscription) return false
+  try {
+    await handOver(account, base, subscription)
+    return true
+  } catch {
+    return false
+  }
 }
 
 /** Asks the server for a test notification to this account's subscriptions. */
