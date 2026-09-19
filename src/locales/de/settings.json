@@ -495,6 +495,20 @@
       "desc": "Einen Ton abspielen, wenn Termine bald beginnen",
       "ariaLabel": "Klangbenachrichtigungen"
     },
+    "server": "Erinnerungen vom Server",
+    "serverPush": {
+      "desc": "Ihr Server sendet Erinnerungen als Benachrichtigungen, auch wenn Calino geschlossen ist.",
+      "descOn": "In diesem Browser aktiviert.",
+      "descInstallFirst": "Fügen Sie Calino zum Home-Bildschirm hinzu, öffnen Sie es von dort und aktivieren Sie dies in dieser App.",
+      "turnOn": "Aktivieren",
+      "sendTest": "Test senden",
+      "enabled": "Erinnerungen vom Server sind aktiviert. Eine Testbenachrichtigung ist unterwegs.",
+      "failed": "Erinnerungen vom Server konnten nicht aktiviert werden: {{error}}",
+      "testSent": "Testbenachrichtigung gesendet.",
+      "testFailed": "Testbenachrichtigung konnte nicht gesendet werden: {{error}}",
+      "offer": "Erinnerungen von {{name}} erhalten, auch wenn Calino geschlossen ist?",
+      "notNow": "Nicht jetzt"
+    },
     "deviceCalendar": "Gerätekalender",
     "calendarMirror": {
       "label": "Mit Android-Kalender synchronisieren (Beta)",
