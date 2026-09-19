@@ -227,13 +227,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # The image the compose kit of anytype-caldav runs: offline support on,
+      # and links into Anytype clickable in descriptions. It carries no
+      # accounts; each person adds the server with their own login.
+      - name: Write the build's calino.config.json
+        run: |
+          printf '%s\n' '{"version": 1, "accounts": [], "linkSchemes": {"anytype": "Anytype"}}' > calino.config.json
+
       - name: Build & push by digest
         id: build
         uses: docker/build-push-action@v7
         with:
           context: .
           platforms: ${{ matrix.platform }}
-          outputs: type=image,name=ghcr.io/ivan-malinovski/calino,push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            CALINO_ENABLE_SW=true
+          outputs: type=image,name=ghcr.io/nrydanov/calino,push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=build-${{ matrix.slug }}
           cache-to: type=gha,mode=max,scope=build-${{ matrix.slug }}
 
@@ -284,7 +293,7 @@ jobs:
           # Pinned lowercase image name so every tag (semver, sha, latest, main)
           # always lands in the single canonical GHCR package, regardless of any
           # future repo rename or owner-casing change.
-          images: ghcr.io/ivan-malinovski/calino
+          images: ghcr.io/nrydanov/calino
           # Only reached on a version-tag push (see the `if:` above), so this
           # is the release's one and only tag set — no `edge`/branch tags to
           # keep disjoint from anymore.
@@ -312,12 +321,12 @@ jobs:
           # chars), so a junk file can't silently become a phantom ref.
           # shellcheck disable=SC2046
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf 'ghcr.io/ivan-malinovski/calino@sha256:%s ' [0-9a-f]*) || exit 1
+            $(printf 'ghcr.io/nrydanov/calino@sha256:%s ' [0-9a-f]*) || exit 1
         env:
           DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
 
       - name: Verify manifest list
-        run: docker buildx imagetools inspect ghcr.io/ivan-malinovski/calino:${{ steps.meta.outputs.version }}
+        run: docker buildx imagetools inspect ghcr.io/nrydanov/calino:${{ steps.meta.outputs.version }}
 
   # ── Publish proxy to GHCR (release tags or manual dispatch) ───
   proxy-build:
@@ -356,7 +365,7 @@ jobs:
         with:
           context: ./proxy
           platforms: ${{ matrix.platform }}
-          outputs: type=image,name=ghcr.io/ivan-malinovski/calino-proxy,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=ghcr.io/nrydanov/calino-proxy,push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=proxy-build-${{ matrix.slug }}
           cache-to: type=gha,mode=max,scope=proxy-build-${{ matrix.slug }}
 
@@ -403,7 +412,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/ivan-malinovski/calino-proxy
+          images: ghcr.io/nrydanov/calino-proxy
           tags: |
             type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=raw,value=latest,enable=${{ (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')) || (github.event_name == 'workflow_dispatch' && inputs.proxy_tag == 'latest') }}
@@ -416,9 +425,9 @@ jobs:
         run: |
           # shellcheck disable=SC2046
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf 'ghcr.io/ivan-malinovski/calino-proxy@sha256:%s ' [0-9a-f]*) || exit 1
+            $(printf 'ghcr.io/nrydanov/calino-proxy@sha256:%s ' [0-9a-f]*) || exit 1
         env:
           DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
 
       - name: Verify proxy manifest list
-        run: docker buildx imagetools inspect ghcr.io/ivan-malinovski/calino-proxy:${{ github.event_name == 'workflow_dispatch' && inputs.proxy_tag || steps.meta.outputs.version }}
+        run: docker buildx imagetools inspect ghcr.io/nrydanov/calino-proxy:${{ github.event_name == 'workflow_dispatch' && inputs.proxy_tag || steps.meta.outputs.version }}
