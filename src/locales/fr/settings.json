@@ -460,6 +460,20 @@
       "desc": "Émettre un son avant le début des événements",
       "ariaLabel": "Alertes sonores"
     },
+    "server": "Rappels du serveur",
+    "serverPush": {
+      "desc": "Votre serveur envoie les rappels sous forme de notifications, même lorsque Calino est fermé.",
+      "descOn": "Activé dans ce navigateur.",
+      "descInstallFirst": "Ajoutez Calino à l’écran d’accueil, ouvrez-le depuis cet écran et activez cette option dans cette application.",
+      "turnOn": "Activer",
+      "sendTest": "Envoyer un test",
+      "enabled": "Les rappels du serveur sont activés. Une notification de test est en route.",
+      "failed": "Impossible d’activer les rappels du serveur : {{error}}",
+      "testSent": "Notification de test envoyée.",
+      "testFailed": "Impossible d’envoyer une notification de test : {{error}}",
+      "offer": "Recevoir les rappels de {{name}} même lorsque Calino est fermé ?",
+      "notNow": "Pas maintenant"
+    },
     "deviceCalendar": "Calendrier de l’appareil",
     "calendarMirror": {
       "label": "Synchroniser avec le calendrier Android (bêta)",
