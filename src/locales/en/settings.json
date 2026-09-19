@@ -413,6 +413,20 @@
       "desc": "Play a sound when events are about to start",
       "ariaLabel": "Sound alerts"
     },
+    "server": "Reminders from the server",
+    "serverPush": {
+      "desc": "Your server sends reminders as notifications, even while Calino is closed.",
+      "descOn": "On in this browser.",
+      "descInstallFirst": "Add Calino to the Home Screen, open it from there and turn this on in that app.",
+      "turnOn": "Turn on",
+      "sendTest": "Send test",
+      "enabled": "Reminders from the server are on. A test notification is on its way.",
+      "failed": "Could not turn on reminders from the server: {{error}}",
+      "testSent": "Test notification sent.",
+      "testFailed": "Could not send a test notification: {{error}}",
+      "offer": "Get reminders from {{name}} even while Calino is closed?",
+      "notNow": "Not now"
+    },
     "deviceCalendar": "Device calendar",
     "calendarMirror": {
       "label": "Sync to Android Calendar (beta)",

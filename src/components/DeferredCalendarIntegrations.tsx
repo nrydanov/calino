@@ -4,6 +4,7 @@ import { useCardDAV } from '@/features/carddav/hooks/useCardDAV'
 import { AIPhotoImportRoot } from '@/features/aiVision/components/AIPhotoImportRoot'
 import { useNativeKeyboard } from '@/hooks/useNativeKeyboard'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useServerPush } from '@/hooks/useServerPush'
 import { useCalendarMirror } from '@/hooks/useCalendarMirror'
 import { initContactPhotos } from '@/lib/contactPhotoSync'
 import { pruneRawIcs } from '@/lib/rawIcsStore'
@@ -17,6 +18,9 @@ export default function DeferredCalendarIntegrations(): JSX.Element {
     void pruneRawIcs().catch(() => {})
   }, [])
 
+  // The server's reminders must be known before notifications decide who
+  // schedules them.
+  useServerPush()
   // Mirror status must exist before notifications decide who schedules them.
   useCalendarMirror()
   useNotifications()
