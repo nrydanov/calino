@@ -16,6 +16,7 @@ import { completeTaskAndSync } from '@/lib/taskCompletion'
 import { TaskContextMenu } from './TaskContextMenu'
 import type { CalendarEvent } from '@/types'
 import styles from './Sidebar.module.css'
+import { MarkdownView } from '@/lib/markdown'
 
 interface MiniTasksSectionProps {
   isExpanded: boolean
@@ -415,7 +416,7 @@ export function MiniTasksSection({ isExpanded, onToggle }: MiniTasksSectionProps
                       top: tooltipPosition.y + 12,
                     }}
                   >
-                    {hoveredTaskData.description}
+                    <MarkdownView text={hoveredTaskData.description} />
                   </div>
                 ) : null,
                 document.body
