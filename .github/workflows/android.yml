@@ -13,6 +13,9 @@ permissions:
 
 jobs:
   build-signed-apk:
+    # The signing keys and the releases are upstream's; a fork's version tag
+    # publishes only its image.
+    if: github.repository == 'Ivan-Malinovski/calino'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
