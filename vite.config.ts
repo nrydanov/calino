@@ -1,5 +1,6 @@
-import { readFileSync, existsSync } from 'node:fs'
-import { defineConfig, loadEnv, type UserConfig } from 'vite'
+import { readFileSync, existsSync, readdirSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { defineConfig, loadEnv, type Plugin, type UserConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
@@ -62,6 +63,31 @@ const devHost = process.env.CALINO_DEV_HOST
 const hmr = devHost ? true : { host: 'localhost', port: 8080 }
 const devConnectSources = typeof hmr === 'object' ? [`ws://${hmr.host}:${hmr.port}`] : []
 
+// Names every built file in sw.js, so the app opens offline on a screen it has
+// not visited yet: index.html lists the entry chunks only, and the rest are
+// loaded on demand. The build's id becomes the cache's name, so a deploy
+// leaves no files of the previous build behind.
+function swPrecache(): Plugin {
+  return {
+    name: 'calino-sw-precache',
+    apply: 'build',
+    closeBundle() {
+      const dist = new URL('./dist/', import.meta.url)
+      const worker = new URL('sw.js', dist)
+      if (!existsSync(worker)) return
+      const assets = readdirSync(new URL('assets/', dist))
+        .sort()
+        .map((name) => `/assets/${name}`)
+      const id = createHash('sha256').update(assets.join('\n')).digest('hex').slice(0, 8)
+      const source = readFileSync(worker, 'utf-8')
+        .replace('const BUILD_ASSETS = []', `const BUILD_ASSETS = ${JSON.stringify(assets)}`)
+        .replace("'__BUILD_ID__'", JSON.stringify(id))
+      writeFileSync(worker, source)
+      console.log(`[build] sw.js keeps ${assets.length} files of build ${id}`)
+    },
+  }
+}
+
 const appConfig = {
   // The app reads these non-VITE_ build-time values from import.meta.env.
   // Keep the allowlist narrow: CALINO_DEV_* and other server-only settings
@@ -87,6 +113,7 @@ const appConfig = {
     nodePolyfills(),
     caldavMockPlugin(),
     carddavMockPlugin(),
+    swPrecache(),
   ],
   server: {
     // SECURITY: default to localhost-only. The dev server has known

@@ -1,6 +1,9 @@
 const scope = new URL(self.registration.scope)
 const cachePrefix = `calino:${scope.pathname}:`
-const CACHE_NAME = `${cachePrefix}v1`
+// Both are filled in by the build (see swPrecache in vite.config.ts).
+const BUILD_ID = '__BUILD_ID__'
+const BUILD_ASSETS = []
+const CACHE_NAME = `${cachePrefix}${BUILD_ID}`
 const STATIC_ASSETS = [
   'manifest.json',
   'apple-touch-icon.png',
@@ -19,8 +22,10 @@ async function precache(cache) {
   const response = await fetch('/', { cache: 'reload' })
   if (!response.ok) return
   await cache.put('/', response.clone())
+  // Without a build (a development worker) the page's own files still get in.
   const html = await response.text()
-  const assets = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((match) => match[1])
+  const fromHtml = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((match) => match[1])
+  const assets = BUILD_ASSETS.length ? BUILD_ASSETS : fromHtml
   await Promise.all(assets.map((url) => cache.add(url).catch(() => {})))
 }
 
