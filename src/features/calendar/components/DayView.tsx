@@ -44,6 +44,7 @@ import {
   transparentEventStyle,
   travelBarStyle,
   taskPillStyle,
+  isZeroDuration,
   TASK_PILL_LAYOUT_MINUTES,
 } from '../lib/eventLayout'
 import { eventCardVariants } from '../lib/eventAnimations'
@@ -426,9 +427,11 @@ export function DayView({
         toEventInstant(a.start, a.timezone).getTime() -
         toEventInstant(b.start, b.timezone).getTime()
     )
-    const transparentEvents = sortedEvents.filter((e) => e.transparency === 'transparent')
-    const taskById = new Map(timedTasks.map((task) => [task.id, task]))
-    const taskLayoutItems = timedTasks.map((task) => ({
+    const blocks = sortedEvents.filter((e) => !isZeroDuration(e))
+    const transparentEvents = blocks.filter((e) => e.transparency === 'transparent')
+    const pills = [...timedTasks, ...sortedEvents.filter(isZeroDuration)]
+    const taskById = new Map(pills.map((task) => [task.id, task]))
+    const taskLayoutItems = pills.map((task) => ({
       ...task,
       end: format(
         addMinutes(toEventInstant(task.start, task.timezone), TASK_PILL_LAYOUT_MINUTES),
@@ -440,7 +443,7 @@ export function DayView({
       sortedEvents,
       transparentEvents,
       taskById,
-      positionedEvents: positionEvents([...sortedEvents, ...taskLayoutItems]),
+      positionedEvents: positionEvents([...blocks, ...taskLayoutItems]),
     }
   }, [dayEvents, timedTasks])
 
