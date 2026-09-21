@@ -1,3 +1,9 @@
+/**
+ * Zero-duration events, such as the deadlines a Moodle calendar export
+ * publishes with DTSTART equal to DTEND, are drawn on the timeline as pills
+ * like timed tasks: tall enough to read, side by side when they share a time,
+ * and inside the grid when they fall at 23:59.
+ */
 import { test, expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
 import { clearState } from './fixtures/localstorage'
