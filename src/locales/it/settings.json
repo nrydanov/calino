@@ -452,6 +452,20 @@
       "desc": "Riproduci un suono quando gli eventi stanno per iniziare",
       "ariaLabel": "Avvisi sonori"
     },
+    "server": "Promemoria dal server",
+    "serverPush": {
+      "desc": "Il tuo server invia i promemoria come notifiche, anche quando Calino è chiuso.",
+      "descOn": "Attivo in questo browser.",
+      "descInstallFirst": "Aggiungi Calino alla schermata Home, aprilo da lì e attiva questa opzione in quell’app.",
+      "turnOn": "Attiva",
+      "sendTest": "Invia prova",
+      "enabled": "I promemoria dal server sono attivi. Una notifica di prova è in arrivo.",
+      "failed": "Impossibile attivare i promemoria dal server: {{error}}",
+      "testSent": "Notifica di prova inviata.",
+      "testFailed": "Impossibile inviare una notifica di prova: {{error}}",
+      "offer": "Ricevere i promemoria da {{name}} anche quando Calino è chiuso?",
+      "notNow": "Non ora"
+    },
     "deviceCalendar": "Calendario del dispositivo",
     "calendarMirror": {
       "label": "Sincronizzazione con il calendario Android (beta)",

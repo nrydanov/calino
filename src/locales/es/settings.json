@@ -452,6 +452,20 @@
       "desc": "Reproduce un sonido cuando los eventos están a punto de comenzar.",
       "ariaLabel": "Alertas sonoras"
     },
+    "server": "Recordatorios del servidor",
+    "serverPush": {
+      "desc": "Tu servidor envía los recordatorios como notificaciones, incluso con Calino cerrado.",
+      "descOn": "Activado en este navegador.",
+      "descInstallFirst": "Añade Calino a la pantalla de inicio, ábrelo desde allí y actívalo en esa aplicación.",
+      "turnOn": "Activar",
+      "sendTest": "Enviar prueba",
+      "enabled": "Los recordatorios del servidor están activados. Una notificación de prueba está en camino.",
+      "failed": "No se pudieron activar los recordatorios del servidor: {{error}}",
+      "testSent": "Notificación de prueba enviada.",
+      "testFailed": "No se pudo enviar una notificación de prueba: {{error}}",
+      "offer": "¿Recibir recordatorios de {{name}} incluso con Calino cerrado?",
+      "notNow": "Ahora no"
+    },
     "deviceCalendar": "Calendario del dispositivo",
     "calendarMirror": {
       "label": "Sincronizar con el calendario de Android (beta)",

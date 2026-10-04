@@ -8,13 +8,18 @@ const mockShowNotification = vi.fn()
 
 vi.mock('sonner', () => ({ toast: vi.fn() }))
 
-vi.mock('@/lib/notifications', () => ({
-  showNotification: (...args: unknown[]) => mockShowNotification(...args),
-  createNotificationId: (eventId: string, reminderId: string) => `calino-${eventId}-${reminderId}`,
-  getDueSnoozedReminders: () => [],
-  snoozeReminder: vi.fn(),
-  getEffectiveReminders: (event: CalendarEvent) => event.reminders ?? [],
-}))
+vi.mock('@/lib/notifications', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/notifications')>()
+  return {
+    ...actual,
+    showNotification: (...args: unknown[]) => mockShowNotification(...args),
+    createNotificationId: (eventId: string, reminderId: string) =>
+      `calino-${eventId}-${reminderId}`,
+    getDueSnoozedReminders: () => [],
+    snoozeReminder: vi.fn(),
+    getEffectiveReminders: (event: CalendarEvent) => event.reminders ?? [],
+  }
+})
 
 let currentEvents: CalendarEvent[] = []
 const calendars = [

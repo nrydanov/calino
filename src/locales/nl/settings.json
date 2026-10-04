@@ -452,6 +452,20 @@
       "desc": "Een geluid afspelen voordat gebeurtenissen beginnen",
       "ariaLabel": "Geluidsmeldingen"
     },
+    "server": "Herinneringen van de server",
+    "serverPush": {
+      "desc": "Je server stuurt herinneringen als meldingen, ook wanneer Calino gesloten is.",
+      "descOn": "Ingeschakeld in deze browser.",
+      "descInstallFirst": "Zet Calino op het beginscherm, open het vanaf daar en schakel dit in die app in.",
+      "turnOn": "Inschakelen",
+      "sendTest": "Test versturen",
+      "enabled": "Herinneringen van de server zijn ingeschakeld. Er is een testmelding onderweg.",
+      "failed": "Kon de herinneringen van de server niet inschakelen: {{error}}",
+      "testSent": "Testmelding verstuurd.",
+      "testFailed": "Kon geen testmelding versturen: {{error}}",
+      "offer": "Herinneringen van {{name}} ontvangen, ook wanneer Calino gesloten is?",
+      "notNow": "Niet nu"
+    },
     "deviceCalendar": "Apparaatagenda",
     "calendarMirror": {
       "label": "Synchroniseren met Android-agenda (bèta)",
