@@ -22,6 +22,7 @@ import {
 } from '@/lib/calendarMirror'
 import { useCalendarMirrorStore } from '@/store/calendarMirrorStore'
 import { Modal } from '@/components/common/Modal'
+import { ServerPushSettings } from './ServerPushSettings'
 import styles from './Settings.module.css'
 
 // R3.9 — copy reused by both the toggle and the test button when the
@@ -185,6 +186,8 @@ export function NotificationSettings({ searchControl }: { searchControl?: JSX.El
           </div>
         </div>
       </div>
+
+      <ServerPushSettings />
 
       {supportsCalendarMirror && (
         <div className={styles.group}>

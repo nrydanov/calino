@@ -19,6 +19,7 @@ import {
   cancelAllNativeReminders,
 } from '@/lib/nativeReminders'
 import { useCalendarMirrorStore, mirrorOwnsReminders } from '@/store/calendarMirrorStore'
+import { useServerPushStore } from '@/store/serverPushStore'
 import { toEventInstant } from '@/lib/datetime'
 import { parseISO, isWithinInterval, addMinutes, addHours, addDays, isAfter } from 'date-fns'
 import { toast } from 'sonner'
@@ -70,6 +71,22 @@ export function useNotifications(): void {
   // what we can schedule ourselves. Standing down avoids double notifications.
   const mirrorStatus = useCalendarMirrorStore((state) => state.status)
   const providerOwnsReminders = mirrorOwnsReminders(mirrorStatus)
+  // Accounts whose server sends these reminders as Web Push: the page stands
+  // down for their calendars, or it would remind of the same event again while
+  // Calino is open.
+  const serverOwnedAccounts = useServerPushStore((state) => state.accountIds)
+  const calendars = useCalendarStore((state) => state.calendars)
+  const pageReminderEvents = useMemo(() => {
+    if (serverOwnedAccounts.length === 0) return reminderEvents
+    const serverOwnedCalendars = new Set(
+      calendars
+        .filter(
+          (calendar) => calendar.accountId && serverOwnedAccounts.includes(calendar.accountId)
+        )
+        .map((calendar) => calendar.id)
+    )
+    return reminderEvents.filter((event) => !serverOwnedCalendars.has(event.calendarId))
+  }, [reminderEvents, calendars, serverOwnedAccounts])
   // Track reminder ID → scheduled trigger timestamp so we can re-fire
   // when the event is edited (trigger time changes).
   const shownReminders = useRef<Map<string, number>>(new Map())
@@ -163,7 +180,7 @@ export function useNotifications(): void {
       // the two `isAfter` checks in the inner loop to bound the window.
       const catchUpCutoff = addHours(now, -CATCH_UP_WINDOW_HOURS)
 
-      reminderEvents.forEach((event) => {
+      pageReminderEvents.forEach((event) => {
         const reminders = getEffectiveReminders(event)
 
         if (reminders.length === 0) return
@@ -273,5 +290,5 @@ export function useNotifications(): void {
       clearInterval(intervalId)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [reminderEvents, enableNotifications])
+  }, [pageReminderEvents, enableNotifications])
 }
