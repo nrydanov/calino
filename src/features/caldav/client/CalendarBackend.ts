@@ -10,6 +10,16 @@ import type { FreeBusyPeriod } from '@/lib/freeBusyCalculator'
 export type { CalendarProtocol }
 
 /**
+ * Where a write landed. `data` is the text the server stored, when it was read
+ * back because the server did not keep the bytes it was sent.
+ */
+export interface WrittenEvent {
+  url: string
+  etag: string
+  data?: string
+}
+
+/**
  * Protocol-neutral calendar backend.
  *
  * This is the surface `SyncEngine`, `useCalDAV`, `useSettingsSync` and
@@ -51,14 +61,14 @@ export interface CalendarBackend {
     calendarUrl: string,
     iCalString: string,
     filename: string
-  ): Promise<{ url: string; etag: string }>
+  ): Promise<WrittenEvent>
   fetchEtag(eventUrl: string): Promise<string>
   updateEvent(
     calendarUrl: string,
     eventUrl: string,
     iCalString: string,
     etag: string
-  ): Promise<{ url: string; etag: string }>
+  ): Promise<WrittenEvent>
   deleteEvent(eventUrl: string, etag: string): Promise<void>
   createCalendar(options: CreateCalendarOptions): Promise<CalDAVCalendar>
   updateCalendar(calendarUrl: string, options: UpdateCalendarOptions): Promise<void>

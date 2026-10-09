@@ -784,10 +784,13 @@ END:VCALENDAR`,
     it('fetches the etag via PROPFIND when the create response omits it', async () => {
       await client.connect()
 
-      // No headers on the create response → empty etag → follow-up PROPFIND.
+      // No headers on the create response → empty etag → the resource is
+      // asked for by multiget, which this server does not answer → follow-up
+      // PROPFIND.
       mockClientMethods.createCalendarObject.mockResolvedValue({
         url: mockEventObject.url,
       })
+      fetchSpy.mockResolvedValueOnce(new Response('', { status: 403 }))
       fetchSpy.mockResolvedValueOnce(
         new Response(
           `<d:multistatus xmlns:d="DAV:"><d:response><d:href>${mockEventObject.url}</d:href><d:propstat><d:prop><d:getetag>"recovered-etag"</d:getetag></d:prop></d:propstat></d:response></d:multistatus>`,
@@ -803,6 +806,36 @@ END:VCALENDAR`,
         mockEventObject.url,
         expect.objectContaining({ method: 'PROPFIND' })
       )
+    })
+
+    // RFC 4791 §5.3.4: a server that stored something other than the bytes it
+    // was sent answers the PUT without an ETag, and what it stored is the
+    // basis for the next change.
+    it('reads the resource back by multiget when the create response omits the etag', async () => {
+      await client.connect()
+
+      mockClientMethods.createCalendarObject.mockResolvedValue({
+        url: mockEventObject.url,
+      })
+      const stored = mockEventObject.data.replace('END:VEVENT', 'SEQUENCE:1791288143\nEND:VEVENT')
+      const member = (name: string, etag: string, data: string) =>
+        `<d:response><d:href>/calendars/test/default/${name}</d:href><d:propstat><d:prop><d:getetag>${etag}</d:getetag><c:calendar-data>${data}</c:calendar-data></d:prop></d:propstat></d:response>`
+      // More than was asked for: the named resource is the one taken.
+      fetchSpy.mockResolvedValueOnce(
+        new Response(
+          `<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">${member('other.ics', '"other"', 'BEGIN:VCALENDAR\nEND:VCALENDAR')}${member('event-1.ics', '"stored-etag"', stored)}</d:multistatus>`,
+          { status: 207 }
+        )
+      )
+
+      const result = await client.createEvent(mockCalendar.url, mockEventObject.data, 'event-1.ics')
+
+      expect(result).toEqual({ url: mockEventObject.url, etag: '"stored-etag"', data: stored })
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+      const [target, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
+      expect(target).toBe(mockCalendar.url)
+      expect(init.method).toBe('REPORT')
+      expect(init.body).toContain('<d:href>/calendars/test/default/event-1.ics</d:href>')
     })
 
     it('uses the ETag header when present without a follow-up PROPFIND', async () => {
@@ -830,6 +863,7 @@ END:VCALENDAR`,
       mockClientMethods.createCalendarObject.mockResolvedValue({
         url: mockEventObject.url,
       })
+      fetchSpy.mockResolvedValueOnce(new Response('', { status: 403 }))
       fetchSpy.mockResolvedValueOnce(
         new Response(
           `<d:multistatus xmlns:d="DAV:"><d:response><d:href>/event-1.ics</d:href>
@@ -1755,7 +1789,9 @@ END:VCALENDAR`,
       // Sent a REPORT carrying the supplied sync token.
       const [, init] = fetchSpy.mock.calls[fetchSpy.mock.calls.length - 1]
       expect(init?.method).toBe('REPORT')
-      expect(String(init?.body)).toContain('<D:sync-token>https://caldav.example.com/sync/1</D:sync-token>')
+      expect(String(init?.body)).toContain(
+        '<D:sync-token>https://caldav.example.com/sync/1</D:sync-token>'
+      )
     })
 
     it('parses tombstoned (removed) resources reported as a top-level 404', async () => {
