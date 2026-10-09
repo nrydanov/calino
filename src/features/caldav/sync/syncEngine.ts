@@ -75,6 +75,15 @@ async function withInlineAttachments(event: CalendarEvent): Promise<CalendarEven
   }
 }
 
+/** The highest SEQUENCE among the components of an iCalendar text; 0 without one. */
+function highestSequence(ics: string): number {
+  let highest = 0
+  for (const match of ics.matchAll(/^SEQUENCE:(\d+)\r?$/gm)) {
+    highest = Math.max(highest, Number(match[1]))
+  }
+  return highest
+}
+
 export class SyncEngine {
   private client: CalDAVClient
   private calendarId: string
@@ -200,7 +209,7 @@ export class SyncEngine {
     const filename = eventResourceFilename(event.id)
 
     const written = await this.client.createEvent(calendar.url, iCalString, filename)
-    await this.rememberRawIcs(written, iCalString)
+    await this.rememberRawIcs(written, written.data ?? iCalString)
     return written
   }
 
@@ -222,7 +231,7 @@ export class SyncEngine {
     const iCalString = await this.serializeForResource([enriched], eventUrl)
 
     const written = await this.client.updateEvent(calendar.url, eventUrl, iCalString, etag)
-    await this.rememberRawIcs(written, iCalString, eventUrl)
+    await this.rememberRawIcs(written, written.data ?? iCalString, eventUrl)
     return written
   }
 
@@ -245,7 +254,7 @@ export class SyncEngine {
     // As in updateEvent: `If-Match` below makes a stale original a 412.
     const iCalString = await this.serializeForResource(enriched, eventUrl)
     const written = await this.client.updateEvent(calendar.url, eventUrl, iCalString, etag)
-    await this.rememberRawIcs(written, iCalString, eventUrl)
+    await this.rememberRawIcs(written, written.data ?? iCalString, eventUrl)
     return written
   }
 
@@ -272,7 +281,7 @@ export class SyncEngine {
     // the master was last seen with before trusting it.
     const iCalString = await this.serializeForResource(enriched, eventUrl, master.etag ?? '')
     const written = await this.client.updateEvent(calendar.url, eventUrl, iCalString, '')
-    await this.rememberRawIcs(written, iCalString, eventUrl)
+    await this.rememberRawIcs(written, written.data ?? iCalString, eventUrl)
     return written
   }
 
@@ -294,8 +303,8 @@ export class SyncEngine {
     href: string | undefined,
     expectedEtag?: string
   ): Promise<string> {
-    const fromScratch = () =>
-      events.length > 1 ? eventsToICAL(events) : serializeEvent(events[0])
+    const fromScratch = (list = events) =>
+      list.length > 1 ? eventsToICAL(list) : serializeEvent(list[0])
 
     if (!href) return fromScratch()
 
@@ -305,7 +314,16 @@ export class SyncEngine {
       return fromScratch()
     }
 
-    return patchICALData(original.ics, events) ?? fromScratch()
+    // The body is built on the text the server last gave, so its SEQUENCE
+    // must not fall below that text's. A server that numbers versions itself
+    // (the text read back after a PUT carries its number) refuses a body
+    // numbered below the version it holds.
+    const floor = highestSequence(original.ics)
+    const raised = events.map((event) =>
+      (event.sequence ?? 0) < floor ? { ...event, sequence: floor } : event
+    )
+
+    return patchICALData(original.ics, raised) ?? fromScratch(raised)
   }
 
   async deleteEvent(eventUrl: string, etag: string): Promise<void> {
@@ -317,7 +335,9 @@ export class SyncEngine {
 
   /**
    * Remember the exact bytes we just PUT, so consecutive edits keep patching a
-   * current original instead of waiting for the next sync to refresh it.
+   * current original instead of waiting for the next sync to refresh it. When
+   * the server answered the PUT without an ETag, the bytes are the ones read
+   * back from it, which is what it holds.
    *
    * Keyed by the url the server reported; `fallbackUrl` covers a client that
    * answers without one. Non-fatal for the same reason as on read: the write

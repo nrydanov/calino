@@ -604,7 +604,7 @@ export class CalDAVClient {
     calendarUrl: string,
     iCalString: string,
     filename: string
-  ): Promise<{ url: string; etag: string }> {
+  ): Promise<{ url: string; etag: string; data?: string }> {
     if (!navigator.onLine) {
       throw new Error('No network connection. Please check your internet connection.')
     }
@@ -635,16 +635,81 @@ export class CalDAVClient {
     // is indistinguishable from one that omits it, so this is the common path
     // on the web, not an edge case. Persisting an empty etag with syncStatus
     // 'synced' means the next update sends an empty If-Match — the stale-etag
-    // conflict we want to avoid. Recover it with a follow-up PROPFIND. Never
-    // throw: a missing etag must not fail creation.
+    // conflict we want to avoid. Recover it by reading the resource back.
+    // Never throw: a missing etag must not fail creation.
+    let data: string | undefined
     if (!etag) {
-      etag = await this.fetchEtag(eventUrl)
+      ;({ etag, data } = await this.readWritten(calendarUrl, eventUrl))
     }
 
     return {
       url: eventUrl,
       etag,
+      data,
     }
+  }
+
+  /**
+   * Read back a resource whose PUT was answered without an ETag.
+   *
+   * RFC 4791 §5.3.4 forbids a strong ETag on a PUT when the server stored
+   * something other than the bytes it was sent, and says the client may need
+   * to retrieve the resource as the basis for further changes. `data` is that
+   * basis. Without an answer to the multiget only the etag is recovered, by
+   * PROPFIND as before. Never throws: the write already succeeded.
+   */
+  private async readWritten(
+    calendarUrl: string,
+    eventUrl: string
+  ): Promise<{ etag: string; data?: string }> {
+    const stored = await this.multigetOne(calendarUrl, eventUrl).catch(() => null)
+    return stored ?? { etag: await this.fetchEtag(eventUrl) }
+  }
+
+  /**
+   * calendar-multiget REPORT (RFC 4791 §7.9) for one resource.
+   *
+   * Its text and its ETag come in one response body, so they are of one
+   * version, and the ETag does not depend on a response header the browser
+   * may be unable to read. `null` unless the answer names the resource with
+   * both.
+   */
+  private async multigetOne(
+    calendarUrl: string,
+    eventUrl: string
+  ): Promise<{ etag: string; data: string } | null> {
+    const path = new URL(eventUrl).pathname
+    const response = await this.proxyFetch(calendarUrl, {
+      method: 'REPORT',
+      headers: {
+        'Content-Type': 'application/xml; charset=utf-8',
+        Authorization: this.authHeader,
+      },
+      body: `<?xml version="1.0" encoding="UTF-8" ?>
+<c:calendar-multiget xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:prop>
+    <d:getetag/>
+    <c:calendar-data/>
+  </d:prop>
+  <d:href>${escapeXml(path)}</d:href>
+</c:calendar-multiget>`,
+    })
+    if (response.status !== 207) return null
+
+    const doc = new DOMParser().parseFromString(await response.text(), 'application/xml')
+    if (doc.getElementsByTagName('parsererror').length > 0) return null
+    // A server may answer with more than was asked; take the named resource.
+    const named = this.getDavElements(doc, 'response').find((item) => {
+      const href = this.getDavElementText(item, 'href')?.trim()
+      return (
+        !!href && decodeURIComponent(new URL(href, eventUrl).pathname) === decodeURIComponent(path)
+      )
+    })
+    if (!named) return null
+    const etag = this.getDavElementText(named, 'getetag')?.trim()
+    const data = named.getElementsByTagNameNS('urn:ietf:params:xml:ns:caldav', 'calendar-data')[0]
+      ?.textContent
+    return etag && data ? { etag, data } : null
   }
 
   /**
@@ -697,7 +762,7 @@ export class CalDAVClient {
     eventUrl: string,
     iCalString: string,
     etag: string
-  ): Promise<{ url: string; etag: string }> {
+  ): Promise<{ url: string; etag: string; data?: string }> {
     if (!navigator.onLine) {
       throw new Error('No network connection. Please check your internet connection.')
     }
@@ -710,14 +775,15 @@ export class CalDAVClient {
     await this.assertResponseOk(result, 'PUT', eventUrl)
 
     // Extract ETag from response headers; if the server omits it (Google,
-    // iCloud), re-fetch it with a PROPFIND instead of keeping the stale
+    // iCloud), read the resource back instead of keeping the stale
     // pre-update etag — the old one will 412 the next update. Mirrors the
     // createEvent fallback. Never throw: a missing etag must not fail the
     // update, and a fresh etag is preferred over the stale one but either is
     // accepted.
     let newEtag = result.headers?.get('etag') || ''
+    let data: string | undefined
     if (!newEtag) {
-      newEtag = await this.fetchEtag(eventUrl)
+      ;({ etag: newEtag, data } = await this.readWritten(calendarUrl, eventUrl))
     }
 
     // `eventUrl`, not `result.url` — see the note in createEvent: the response
@@ -725,6 +791,7 @@ export class CalDAVClient {
     return {
       url: eventUrl,
       etag: newEtag || etag,
+      data,
     }
   }
 
