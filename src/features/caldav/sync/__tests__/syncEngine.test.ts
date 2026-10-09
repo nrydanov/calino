@@ -85,11 +85,7 @@ describe('SyncEngine', () => {
         },
       ])
 
-      const result = await engine.fullSync(
-        '2024-01-01T00:00:00Z',
-        '2024-12-31T23:59:59Z',
-        [local]
-      )
+      const result = await engine.fullSync('2024-01-01T00:00:00Z', '2024-12-31T23:59:59Z', [local])
 
       // Server event has same sequence as local — should NOT be marked as updated
       expect(result.result.updated).not.toContain('event-1')
@@ -470,6 +466,25 @@ describe('SyncEngine — retains the original iCalendar text', () => {
     expect(rawIcs.get(`${calendarUrl}server-generated.ics`)).toEqual({ ics: sent, etag: '"2"' })
   })
 
+  it('stores the text read back when the server answered the PUT without an ETag', async () => {
+    const readBack = serverIcs('event-1')
+    mockClient.updateEvent = vi
+      .fn()
+      .mockImplementation(async (_collection: string, url: string) => ({
+        url,
+        etag: '"2"',
+        data: readBack,
+      }))
+    const event = makeEvent({ resourceHref: `${calendarUrl}server-generated.ics` })
+
+    await engine.updateEvent(event, '"etag"')
+
+    expect(rawIcs.get(`${calendarUrl}server-generated.ics`)).toEqual({
+      ics: readBack,
+      etag: '"2"',
+    })
+  })
+
   it('stores the exact bytes updateEventGroup sent, once for the whole group', async () => {
     const master = makeEvent({
       uid: 'series-uid',
@@ -606,6 +621,27 @@ describe('SyncEngine — patches the original instead of rebuilding', () => {
     expect(body).toContain('PRODID:-//Other Client//EN')
   })
 
+  it('numbers a body no lower than the text the server last gave', async () => {
+    const event = await syncOne()
+    // The server numbers versions itself: what it holds after the first PUT
+    // carries its own SEQUENCE, far above the 1 the edit was sent with.
+    const readBack = serverIcs.replace('SUMMARY:', 'SEQUENCE:1791288143\r\nSUMMARY:')
+    mockClient.updateEvent = vi
+      .fn()
+      .mockImplementation(async (_collection: string, url: string) => ({
+        url,
+        etag: '"2"',
+        data: readBack,
+      }))
+
+    await engine.updateEvent({ ...event, title: 'Renamed', sequence: 1 }, '"etag-1"')
+    await engine.updateEvent({ ...event, title: 'Renamed again', sequence: 2 }, '"2"')
+
+    const second = vi.mocked(mockClient.updateEvent!).mock.calls[1][2] as string
+    expect(second).toContain('SEQUENCE:1791288143')
+    expect(second).toContain('SUMMARY:Renamed again')
+  })
+
   it('falls back to a from-scratch build when nothing is stored', async () => {
     const event = makeEvent({ resourceHref: `${calendarUrl}absent.ics` })
 
@@ -633,9 +669,7 @@ describe('SyncEngine — patches the original instead of rebuilding', () => {
    */
   async function syncAtDerivedHref(etag: string) {
     const href = `${calendarUrl}${eventResourceFilename('event-1')}`
-    mockClient.fetchEvents = vi
-      .fn()
-      .mockResolvedValue([{ url: href, data: serverIcs, etag }])
+    mockClient.fetchEvents = vi.fn().mockResolvedValue([{ url: href, data: serverIcs, etag }])
     const { events } = await engine.fullSync('2024-01-01T00:00:00Z', '2024-12-31T23:59:59Z', [])
     // The guard only means anything if the engine will PUT back to this href.
     expect(`${calendarUrl}${eventResourceFilename(events[0].id)}`).toBe(href)
