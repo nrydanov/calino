@@ -3171,7 +3171,13 @@ export function useCalDAVInstance(): UseCalDAVReturn {
       const calendar = allCalendars.find((c) => c.id === calendarId)
       const account = allAccounts.find((a) => a.id === calendar?.accountId)
 
-      if (!calendar || !account) {
+      // A calendar the sidebar still shows but sync no longer tracks: the
+      // server has nothing of it to delete, so it only leaves the sidebar.
+      if (!calendar) {
+        storeDeleteCalendar(calendarId)
+        return
+      }
+      if (!account) {
         throw new Error('Calendar or account not found')
       }
 
