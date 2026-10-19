@@ -1,3 +1,5 @@
+import type { CalendarEvent } from '@/types'
+
 /**
  * Recurring occurrences are encoded as `${masterId}-${occurrence}` so a single
  * `id` resolves to the master through `findEventById` everywhere. The suffix
@@ -46,6 +48,33 @@ export function findEventById<T extends { id: string }>(
   return (
     arr.find((e) => e.id === id) ??
     (originalId !== null ? arr.find((e) => e.id === originalId) : undefined)
+  )
+}
+
+/**
+ * R2.7 — Find the master component a detached override belongs to.
+ *
+ * Matches on the local `recurrenceMasterId` first, falling back to the shared
+ * UID. The UID fallback is what makes Nextcloud Tasks' split-resource writes
+ * work: it PUTs the exception to a *separate* href, so the pair can arrive with
+ * no href in common and only the UID to tie them together.
+ */
+export function findSeriesMaster(
+  events: readonly CalendarEvent[],
+  override: CalendarEvent
+): CalendarEvent | undefined {
+  return events.find(
+    (candidate) =>
+      !candidate.recurrenceId &&
+      // Scoped to the same collection and component type. This feeds a group
+      // write that rewrites the matched master's whole resource, so a loose
+      // match here corrupts an unrelated calendar object — a bare id/uid
+      // comparison would happily pair a task override with a VEVENT of the
+      // same uid in another calendar.
+      candidate.calendarId === override.calendarId &&
+      candidate.type === override.type &&
+      (candidate.id === override.recurrenceMasterId ||
+        (Boolean(override.uid) && candidate.uid === override.uid))
   )
 }
 
