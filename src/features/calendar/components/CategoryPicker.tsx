@@ -15,8 +15,8 @@ interface CategoryPickerProps {
 
 /**
  * The categories of an event. A few are all shown as chips to toggle. Past
- * `CATEGORY_CHIP_LIMIT` only the chosen ones are shown, and the rest are
- * found by typing after "+ Category".
+ * `CATEGORY_CHIP_LIMIT` only the chosen ones are shown; "+ Category" opens a
+ * search whose matches are chips on the row below, at most the same number.
  */
 export function CategoryPicker({
   categories,
@@ -72,15 +72,13 @@ export function CategoryPicker({
   }
 
   return (
-    <div className={styles.categoriesList}>
-      {categories.filter((cat) => selected.includes(cat.name)).map(chip)}
-      {searching ? (
-        <div ref={searchRef} className={styles.categorySearch}>
+    <div ref={searchRef} className={styles.categoryPicker}>
+      <div className={styles.categoriesList}>
+        {categories.filter((cat) => selected.includes(cat.name)).map(chip)}
+        {searching ? (
           <input
             type="text"
-            role="combobox"
-            aria-expanded={matches.length > 0}
-            aria-autocomplete="list"
+            aria-label={t('modals.eventModal.searchCategories')}
             autoFocus
             placeholder={t('modals.eventModal.searchCategories')}
             value={query}
@@ -96,30 +94,16 @@ export function CategoryPicker({
               }
             }}
           />
-          {matches.length > 0 && (
-            <ul role="listbox" className={styles.categoryOptions}>
-              {matches.map((cat) => (
-                <li key={cat.id} role="option" aria-selected={false}>
-                  <button
-                    type="button"
-                    className={styles.categoryOption}
-                    onClick={() => choose(cat.name)}
-                  >
-                    <span
-                      className={styles.categoryChipDot}
-                      style={{ backgroundColor: cat.color }}
-                    />
-                    {cat.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+        ) : (
+          <button type="button" className={styles.categoryChip} onClick={() => setSearching(true)}>
+            {t('modals.eventModal.addCategory')}
+          </button>
+        )}
+      </div>
+      {searching && matches.length > 0 && (
+        <div className={styles.categoriesList}>
+          {matches.slice(0, CATEGORY_CHIP_LIMIT).map(chip)}
         </div>
-      ) : (
-        <button type="button" className={styles.categoryChip} onClick={() => setSearching(true)}>
-          {t('modals.eventModal.addCategory')}
-        </button>
       )}
     </div>
   )

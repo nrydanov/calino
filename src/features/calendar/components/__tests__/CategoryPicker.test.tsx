@@ -33,7 +33,7 @@ describe('CategoryPicker', () => {
     ])
 
     await userEvent.click(screen.getAllByRole('button')[1])
-    await userEvent.type(screen.getByRole('combobox'), '12{Enter}')
+    await userEvent.type(screen.getByRole('textbox'), '12{Enter}')
 
     expect(onChange).toHaveBeenCalledWith(['Cat 0', 'Cat 12'])
   })
