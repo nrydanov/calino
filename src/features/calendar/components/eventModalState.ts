@@ -4,7 +4,9 @@ export { addMinutesToTimeStr }
 import { extractOriginalEventId } from '@/lib/events'
 import { isUUID } from '@/lib/uuid'
 import { makeDefaultReminders } from '@/lib/notifications'
+import type { Category } from '@/types/categories'
 import type {
+  Calendar,
   CalendarEvent,
   CalendarAttachment,
   CalendarAttendee,
@@ -320,4 +322,29 @@ export function getInitialFormState(
     endTime: defaultEndTime,
     reminders: defaultReminders,
   })
+}
+
+/**
+ * The categories offered on an event in `calendarId`. A calendar of a synced
+ * account offers the names that account's events carry: its server keeps its
+ * own set of tags and may refuse a name from another account. A local
+ * calendar offers every category. Names already on the event stay offered so
+ * they can be taken off.
+ */
+export function categoriesForCalendar(
+  categories: Category[],
+  calendars: Pick<Calendar, 'id' | 'accountId'>[],
+  events: Pick<CalendarEvent, 'calendarId' | 'categories'>[],
+  calendarId: string,
+  selected: string[]
+): Category[] {
+  const accountOf = new Map(calendars.map((calendar) => [calendar.id, calendar.accountId]))
+  const accountId = accountOf.get(calendarId)
+  if (!accountId) return categories
+  const names = new Set(selected)
+  for (const event of events) {
+    if (accountOf.get(event.calendarId) !== accountId) continue
+    for (const name of event.categories ?? []) names.add(name)
+  }
+  return categories.filter((category) => names.has(category.name))
 }

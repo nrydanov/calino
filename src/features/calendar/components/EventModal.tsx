@@ -31,7 +31,7 @@ import { EventFormFields } from './EventFormFields'
 import { LocationPicker } from './LocationPicker'
 import { RecurrenceDialog } from './RecurrenceDialog'
 import { DeleteDialog } from './DeleteDialog'
-import { getInitialFormState, addMinutesToTimeStr } from './eventModalState'
+import { getInitialFormState, addMinutesToTimeStr, categoriesForCalendar } from './eventModalState'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -302,6 +302,10 @@ export function EventModal(): JSX.Element | null {
   const [completed, setCompleted] = useState(false)
   const [priority, setPriority] = useState<TaskPriority | undefined>(undefined)
   const [selectedCategories, setSelectedCategories] = useState<string[]>(initialState.categories)
+  const offeredCategories = useMemo(
+    () => categoriesForCalendar(categories, calendars, events, calendarId, selectedCategories),
+    [categories, calendars, events, calendarId, selectedCategories]
+  )
 
   const lastSelectedEventId = useRef<string | null>(null)
   const lastSelectedDate = useRef<string | null>(null)
@@ -1961,14 +1965,14 @@ export function EventModal(): JSX.Element | null {
               </div>
 
               <div className={styles.modalGroup}>
-                {categories.length > 0 && (
+                {offeredCategories.length > 0 && (
                   <div className={styles.modalRow2}>
                     <div className={styles.categoriesContainer}>
                       <div className={styles.categoriesLabel}>
                         {t('modals.eventModal.categories')}
                       </div>
                       <div className={styles.categoriesList}>
-                        {categories.map((cat) => (
+                        {offeredCategories.map((cat) => (
                           <button
                             key={cat.id}
                             type="button"
