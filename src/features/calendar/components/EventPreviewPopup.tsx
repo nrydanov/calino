@@ -31,7 +31,7 @@ import { RecurringIcon } from '@/components/common/icons'
 import { EventBackground } from '@/components/common/EventBackground'
 import { matchEventBackground } from '@/lib/eventBackground'
 import { describeRecurrence } from '@/lib/recurrence'
-import { hasDueTime, extractOriginalEventId } from '@/lib/events'
+import { hasDueTime, extractOriginalEventId, findSeriesMaster } from '@/lib/events'
 import type { CalendarEvent, RecurrenceEditMode } from '@/types'
 import { deleteRecurringOccurrence } from '@/lib/recurrenceDelete'
 import { buildMailtoUri } from '@/lib/mailtoInvite'
@@ -102,7 +102,13 @@ export function EventPreviewPopup({
   const originalEventId = extractOriginalEventId(clickedEventId)
   const eventIdToUse = originalEventId || event.id
 
-  const recurrenceDescription = useMemo(() => describeRecurrence(event), [event])
+  // A detached override has no rule of its own; its repeat is the series'.
+  const series = event.recurrenceId ? findSeriesMaster(events, event) : event
+  const seriesRepeats = !!series && (!!series.recurrence || !!series.rruleString)
+  const recurrenceDescription = useMemo(
+    () => (series ? describeRecurrence(series) : ''),
+    [series]
+  )
   // For recurring event occurrences, the event prop is the parent series.
   // The actual occurrence start is encoded in clickedEventId after the parent id.
   const occurrenceStartISO = originalEventId
@@ -1171,7 +1177,7 @@ export function EventPreviewPopup({
                       />
                     </svg>
                     {renderDate()}
-                    {(event.recurrence || event.rruleString) && (
+                    {seriesRepeats && (
                       <span className={styles.recurringIcon} data-tooltip={recurrenceDescription}>
                         <RecurringIcon />
                       </span>

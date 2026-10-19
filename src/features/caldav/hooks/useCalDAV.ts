@@ -54,6 +54,7 @@ import { useCalDAVSyncStore } from '@/store/caldavSyncStore'
 import { useProgressStore, withProgress, isProgressOwned } from '@/store/progressStore'
 import { useConfigStore } from '@/store/configStore'
 import { createUuid } from '@/lib/uuid'
+import { findSeriesMaster } from '@/lib/events'
 import { EVENT_COLORS } from '@/store/settingsStore'
 import {
   selectAddEvent,
@@ -221,28 +222,8 @@ function withResourceSiblings(
   ]
 }
 
-/**
- * R2.7 — Find the master component a detached override belongs to.
- *
- * Matches on the local `recurrenceMasterId` first, falling back to the shared
- * UID. The UID fallback is what makes Nextcloud Tasks' split-resource writes
- * work: it PUTs the exception to a *separate* href, so the pair can arrive with
- * no href in common and only the UID to tie them together.
- */
 function findRecurrenceMaster(override: CalendarEvent): CalendarEvent | undefined {
-  return useCalendarStore.getState().events.find(
-    (candidate) =>
-      !candidate.recurrenceId &&
-      // Scoped to the same collection and component type. This feeds a group
-      // write that rewrites the matched master's whole resource, so a loose
-      // match here corrupts an unrelated calendar object — a bare id/uid
-      // comparison would happily pair a task override with a VEVENT of the
-      // same uid in another calendar.
-      candidate.calendarId === override.calendarId &&
-      candidate.type === override.type &&
-      (candidate.id === override.recurrenceMasterId ||
-        (Boolean(override.uid) && candidate.uid === override.uid))
-  )
+  return findSeriesMaster(useCalendarStore.getState().events, override)
 }
 
 /**

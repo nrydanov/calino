@@ -212,6 +212,9 @@ export const EventCard = React.memo(function EventCard({
 
   const isRecurring = !!event.recurrence || !!event.rruleString
   const isRecurringInstance = !!originalEventId
+  // A detached override is still an occurrence of its series, so it carries
+  // the series' icon even though it has no rule of its own.
+  const showsRecurringIcon = isRecurring || !!event.recurrenceId
   const isReadOnlyCalendar = calendar?.readOnly === true
   // Drag-and-drop is disabled for any recurring event (master or generated
   // instance) and for exceptions. The "which occurrence?" question has to
@@ -617,7 +620,7 @@ export const EventCard = React.memo(function EventCard({
             <SyncWarningIcon />
           </div>
         )}
-        {(isRecurring || (event.attachments && event.attachments.length > 0)) && (
+        {(showsRecurringIcon || (event.attachments && event.attachments.length > 0)) && (
           <div className={styles.iconGroup}>
             {event.attachments && event.attachments.length > 0 && (
               <div
@@ -640,7 +643,7 @@ export const EventCard = React.memo(function EventCard({
                 </svg>
               </div>
             )}
-            {isRecurring && (
+            {showsRecurringIcon && (
               <div className={styles.recurringIcon}>
                 <RecurringIcon />
               </div>
