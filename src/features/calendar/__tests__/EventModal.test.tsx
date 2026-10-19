@@ -641,9 +641,8 @@ describe('EventModal', () => {
       })
     })
 
-    it('re-edits an existing exception without changing the recurrence master', async () => {
+    const seedStoredOccurrence = () => {
       const store = useCalendarStore.getState()
-      store.addCategory({ id: 'work-category', name: 'Work', color: '#4285F4' })
       store.addEvent({
         id: 'series-master',
         uid: 'series-master',
@@ -666,16 +665,51 @@ describe('EventModal', () => {
         recurrenceMasterId: 'series-master',
       })
       store.openModal(undefined, undefined, 'series-master-2024-03-15T10:00:00.000Z')
+    }
+
+    it('shows a stored occurrence as repeating by its series rule', () => {
+      seedStoredOccurrence()
+      render(<EventModal />)
+
+      expect(screen.getByRole('checkbox', { name: /recurring/i })).toBeChecked()
+    })
+
+    it('re-edits an existing exception without changing the recurrence master', async () => {
+      useCalendarStore
+        .getState()
+        .addCategory({ id: 'work-category', name: 'Work', color: '#4285F4' })
+      seedStoredOccurrence()
       render(<EventModal />)
 
       fireEvent.click(screen.getByRole('button', { name: 'Work' }))
       fireEvent.click(screen.getByRole('button', { name: /save/i }))
+      fireEvent.click(screen.getByRole('button', { name: /this event only/i }))
 
-      expect(screen.queryByText('Edit recurring event')).not.toBeInTheDocument()
       await waitFor(() => {
         const events = useCalendarStore.getState().events
         expect(events.find((event) => event.id === 'series-master')?.categories).toEqual([])
         expect(events.find((event) => event.recurrenceId)?.categories).toEqual(['Work'])
+      })
+    })
+
+    it('applies a stored occurrence edit to all events on the series day and title', async () => {
+      seedStoredOccurrence()
+      render(<EventModal />)
+
+      fireEvent.change(screen.getByLabelText(/location/i), {
+        target: { value: 'Room 2' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: /save/i }))
+      fireEvent.click(screen.getByRole('button', { name: /all events/i }))
+
+      await waitFor(() => {
+        const master = useCalendarStore
+          .getState()
+          .events.find((event) => event.id === 'series-master')
+        expect(master?.location).toBe('Room 2')
+        expect(master?.title).toBe('Master title')
+        expect(master?.start).toContain('2024-03-01')
+        expect(master?.recurrence?.frequency).toBe('weekly')
       })
     })
   })

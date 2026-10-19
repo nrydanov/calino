@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import { useState, useMemo, useEffect, useRef, useCallback, useId } from 'react'
 import { motion } from 'framer-motion'
-import { format, parseISO } from 'date-fns'
+import { addDays, differenceInCalendarDays, format, parseISO } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import { pad2, toEventInstant, deviceTimezone, formatDisplayDate } from '@/lib/datetime'
 import { createUuid } from '@/lib/uuid'
@@ -9,7 +9,7 @@ import { calendarMutesReminders, useCalendarStore } from '@/store/calendarStore'
 import { useCalDAV } from '@/features/caldav/hooks/useCalDAV'
 import { showToast } from '@/lib/toast'
 import { safeCalDAVUpdate } from '@/lib/caldavHelpers'
-import { buildRRuleString, describeRecurrence } from '@/lib/recurrence'
+import { buildRRuleString } from '@/lib/recurrence'
 import { taskDayRange } from '@/lib/weekTasks'
 import { hasRecurrenceChanged } from '@/lib/recurrenceComparison'
 import { findEventById, findSeriesMaster } from '@/lib/events'
@@ -679,7 +679,6 @@ export function EventModal(): JSX.Element | null {
   const seriesOfEvent = existingEventForMode?.recurrenceId
     ? findSeriesMaster(events, existingEventForMode)
     : undefined
-  const seriesRule = seriesOfEvent ? describeRecurrence(seriesOfEvent) : undefined
   const eventType = existingEventForMode?.type
 
   // Actions that operate on the event as a whole rather than on a form field.
@@ -858,7 +857,8 @@ export function EventModal(): JSX.Element | null {
         endOnDate,
         endAfterCount,
       },
-      existingEventForMode
+      // An override's rule shown in the form is its series'.
+      seriesOfEvent ?? existingEventForMode
     )
 
     if (isTaskMode) {
@@ -919,6 +919,7 @@ export function EventModal(): JSX.Element | null {
     )
   }, [
     existingEventForMode,
+    seriesOfEvent,
     isTaskMode,
     title,
     description,
@@ -1004,17 +1005,6 @@ export function EventModal(): JSX.Element | null {
           ? t('modals.eventModal.endDateBeforeStart')
           : t('modals.eventModal.endTimeBeforeStart')
       )
-      return
-    }
-
-    // Stored exceptions are already detached, so save them back as the same occurrence.
-    if (
-      isEditing &&
-      initialState.isRecurringInstance &&
-      existingEventForMode?.recurrenceId &&
-      hasChanges
-    ) {
-      saveEvent('this')
       return
     }
 
@@ -1377,12 +1367,41 @@ export function EventModal(): JSX.Element | null {
               ? masterForSeries.dueDate?.split('T')[0] ||
                 format(parseISO(masterForSeries.start), 'yyyy-MM-dd')
               : dueDate
+          // Editing the whole series from a stored occurrence: the form holds
+          // that occurrence's day, title and description. The series keeps its
+          // own day, and its own title and description unless the user changed
+          // them, so the times edited in the form move to the series' day.
+          const fromOverride =
+            !isTaskMode && !!selectedStoredEvent?.recurrenceId && !!masterForSeries
+          const seriesDayShift =
+            fromOverride && masterForSeries
+              ? differenceInCalendarDays(
+                  toEventInstant(masterForSeries.start, masterForSeries.timezone),
+                  parseISO(startDate)
+                )
+              : 0
+          const onSeriesDay = (day: string, time: string): string => {
+            const shifted = format(addDays(parseISO(day), seriesDayShift), 'yyyy-MM-dd')
+            return isAllDay ? `${shifted}T00:00:00` : storeTimed(`${shifted}T${time}:00`)
+          }
+          const seriesTitle =
+            fromOverride && masterForSeries && title === selectedStoredEvent?.title
+              ? masterForSeries.title
+              : title
+          const seriesDescription =
+            fromOverride &&
+            masterForSeries &&
+            description === (selectedStoredEvent?.description || '')
+              ? masterForSeries.description || ''
+              : description
           const eventStart =
             isTaskMode && seriesDueDate
               ? `${effectiveTaskStart || seriesDueDate}T${taskTime}`
-              : startDateTime
+              : onSeriesDay(startDate, startTime)
           const eventEnd =
-            isTaskMode && seriesDueDate ? `${seriesDueDate}T${taskEndTime}` : endDateTime
+            isTaskMode && seriesDueDate
+              ? `${seriesDueDate}T${taskEndTime}`
+              : onSeriesDay(endDate, endTime)
           // Include time in dueDate for non-all-day tasks so we can display it
           const taskDueDate =
             isTaskMode && seriesDueDate
@@ -1391,8 +1410,8 @@ export function EventModal(): JSX.Element | null {
                 : `${seriesDueDate}T${taskTime}`
               : undefined
           updateEvent(eventId!, {
-            title,
-            description: description || undefined,
+            title: seriesTitle,
+            description: seriesDescription || undefined,
             location: location || undefined,
             start: eventStart,
             end: eventEnd,
@@ -1444,8 +1463,8 @@ export function EventModal(): JSX.Element | null {
                 calendarId,
                 {
                   ...existingEvent,
-                  title,
-                  description: description || undefined,
+                  title: seriesTitle,
+                  description: seriesDescription || undefined,
                   location: location || undefined,
                   start: eventStart,
                   end: eventEnd,
@@ -1470,8 +1489,8 @@ export function EventModal(): JSX.Element | null {
                   organizer,
                 },
                 {
-                  title,
-                  description: description || undefined,
+                  title: seriesTitle,
+                  description: seriesDescription || undefined,
                   location: location || undefined,
                   start: eventStart,
                   end: eventEnd,
@@ -1868,7 +1887,6 @@ export function EventModal(): JSX.Element | null {
                     onEndTimeChange={handleEndTimeChange}
                     recurring={recurring}
                     onRecurringChange={setRecurring}
-                    seriesRule={seriesRule}
                     recurrence={recurrence}
                     onRecurrenceChange={(freq) => {
                       setRecurrence(freq)
