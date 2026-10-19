@@ -9,10 +9,10 @@ import { calendarMutesReminders, useCalendarStore } from '@/store/calendarStore'
 import { useCalDAV } from '@/features/caldav/hooks/useCalDAV'
 import { showToast } from '@/lib/toast'
 import { safeCalDAVUpdate } from '@/lib/caldavHelpers'
-import { buildRRuleString } from '@/lib/recurrence'
+import { buildRRuleString, describeRecurrence } from '@/lib/recurrence'
 import { taskDayRange } from '@/lib/weekTasks'
 import { hasRecurrenceChanged } from '@/lib/recurrenceComparison'
-import { findEventById } from '@/lib/events'
+import { findEventById, findSeriesMaster } from '@/lib/events'
 import { buildMasterTruncation } from '@/lib/recurrenceSplit'
 import { deleteRecurringOccurrence, getOccurrenceStart } from '@/lib/recurrenceDelete'
 import type {
@@ -676,6 +676,10 @@ export function EventModal(): JSX.Element | null {
   // any occurrence silently converted the whole series into events, and the
   // due-date/all-day fields were dropped on the way out.
   const existingEventForMode = findEventById(events, selectedEventId)
+  const seriesOfEvent = existingEventForMode?.recurrenceId
+    ? findSeriesMaster(events, existingEventForMode)
+    : undefined
+  const seriesRule = seriesOfEvent ? describeRecurrence(seriesOfEvent) : undefined
   const eventType = existingEventForMode?.type
 
   // Actions that operate on the event as a whole rather than on a form field.
@@ -1864,6 +1868,7 @@ export function EventModal(): JSX.Element | null {
                     onEndTimeChange={handleEndTimeChange}
                     recurring={recurring}
                     onRecurringChange={setRecurring}
+                    seriesRule={seriesRule}
                     recurrence={recurrence}
                     onRecurrenceChange={(freq) => {
                       setRecurrence(freq)
