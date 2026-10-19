@@ -399,6 +399,8 @@
       "readOnlyOption": "{{name}} (skrivebeskyttet)",
       "readOnlyCalendarNotice": "This kalender is a skrivebeskyttet abonnement — begivenheder synkroniseres fra kilden og kan ikke redigeres her.",
       "categories": "Kategorier",
+      "addCategory": "+ Kategori",
+      "searchCategories": "Søg i kategorier",
       "addDescription": "+ Tilføj beskrivelse",
       "description": "Beskrivelse",
       "removeDescription": "Fjern beskrivelse",

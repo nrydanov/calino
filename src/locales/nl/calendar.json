@@ -511,6 +511,8 @@
       "readOnlyOption": "{{name}} (alleen-lezen)",
       "readOnlyCalendarNotice": "Deze agenda is een alleen-lezen abonnement — gebeurtenissen worden vanaf de bron gesynchroniseerd en kunnen hier niet worden bewerkt.",
       "categories": "Categorieën",
+      "addCategory": "+ Categorie",
+      "searchCategories": "Categorieën zoeken",
       "addDescription": "+ Beschrijving toevoegen",
       "description": "Beschrijving",
       "removeDescription": "Beschrijving verwijderen",

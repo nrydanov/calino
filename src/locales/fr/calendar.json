@@ -511,6 +511,8 @@
       "readOnlyOption": "{{name}} (lecture seule)",
       "readOnlyCalendarNotice": "Cet abonnement au calendrier est en lecture seule : les événements sont synchronisés depuis la source et ne peuvent pas être modifiés ici.",
       "categories": "Catégories",
+      "addCategory": "+ Catégorie",
+      "searchCategories": "Rechercher des catégories",
       "addDescription": "+ Ajouter une description",
       "description": "Description",
       "removeDescription": "Supprimer la description",

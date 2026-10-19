@@ -399,6 +399,8 @@
       "readOnlyOption": "{{name}} (read-only)",
       "readOnlyCalendarNotice": "This calendar is a read-only subscription — events sync from the source and can't be edited here.",
       "categories": "Kategorien",
+      "addCategory": "+ Kategorie",
+      "searchCategories": "Kategorien durchsuchen",
       "addDescription": "+ Hinzufügen description",
       "description": "Beschreibung",
       "removeDescription": "Entfernen description",
