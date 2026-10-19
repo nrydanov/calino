@@ -1,7 +1,7 @@
 import { format, parseISO } from 'date-fns'
 import { pad2, addMinutesToTimeStr, toEventInstant } from '@/lib/datetime'
 export { addMinutesToTimeStr }
-import { extractOriginalEventId } from '@/lib/events'
+import { extractOriginalEventId, findSeriesMaster } from '@/lib/events'
 import { isUUID } from '@/lib/uuid'
 import { makeDefaultReminders } from '@/lib/notifications'
 import type { Category } from '@/types/categories'
@@ -185,7 +185,10 @@ export function getInitialFormState(
           }
         }
       }
-      const rule = existingEvent.recurrence
+      // A detached override has no rule of its own; it repeats by its series'.
+      const rule = existingEvent.recurrenceId
+        ? findSeriesMaster(events, existingEvent)?.recurrence
+        : existingEvent.recurrence
       // R2.4 — Read per-BYDAY ordinals from byDayOrdinals. Fall back to
       // legacy bySetPos when byDayOrdinals is missing (events persisted
       // before the R2.4 deconflation stored per-BYDAY ordinals in
