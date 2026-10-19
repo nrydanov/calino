@@ -97,8 +97,6 @@ interface EventFormFieldsProps {
   onEndTimeChange: (time: string) => void
   recurring: boolean
   onRecurringChange: (recurring: boolean) => void
-  /** The series' rule, described, when the event is an occurrence of one. */
-  seriesRule?: string
   recurrence: RecurrenceRule['frequency']
   onRecurrenceChange: (recurrence: RecurrenceRule['frequency']) => void
   interval: number
@@ -200,7 +198,6 @@ export function EventFormFields({
   onEndTimeChange,
   recurring,
   onRecurringChange,
-  seriesRule,
   recurrence,
   onRecurrenceChange,
   interval,
@@ -451,13 +448,7 @@ export function EventFormFields({
           <span>{t('modals.eventForm.available')}</span>
         </label>
 
-        {/* An occurrence repeats by its series' rule, which it cannot change. */}
-        <RecurrenceToggle
-          recurring={recurring || !!seriesRule}
-          onRecurringChange={handleRecurringToggle}
-          disabled={!!seriesRule}
-          disabledReason={seriesRule}
-        />
+        <RecurrenceToggle recurring={recurring} onRecurringChange={handleRecurringToggle} />
 
         <button
           type="button"
