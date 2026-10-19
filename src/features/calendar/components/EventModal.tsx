@@ -31,6 +31,7 @@ import { EventFormFields } from './EventFormFields'
 import { LocationPicker } from './LocationPicker'
 import { RecurrenceDialog } from './RecurrenceDialog'
 import { DeleteDialog } from './DeleteDialog'
+import { CategoryPicker } from './CategoryPicker'
 import { getInitialFormState, addMinutesToTimeStr, categoriesForCalendar } from './eventModalState'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
@@ -1971,35 +1972,11 @@ export function EventModal(): JSX.Element | null {
                       <div className={styles.categoriesLabel}>
                         {t('modals.eventModal.categories')}
                       </div>
-                      <div className={styles.categoriesList}>
-                        {offeredCategories.map((cat) => (
-                          <button
-                            key={cat.id}
-                            type="button"
-                            aria-pressed={selectedCategories.includes(cat.name)}
-                            className={`${styles.categoryChip} ${
-                              selectedCategories.includes(cat.name)
-                                ? styles.categoryChipSelected
-                                : ''
-                            }`}
-                            onClick={() => {
-                              if (selectedCategories.includes(cat.name)) {
-                                setSelectedCategories(
-                                  selectedCategories.filter((name) => name !== cat.name)
-                                )
-                              } else {
-                                setSelectedCategories([...selectedCategories, cat.name])
-                              }
-                            }}
-                          >
-                            <span
-                              className={styles.categoryChipDot}
-                              style={{ backgroundColor: cat.color }}
-                            />
-                            {cat.name}
-                          </button>
-                        ))}
-                      </div>
+                      <CategoryPicker
+                        categories={offeredCategories}
+                        selected={selectedCategories}
+                        onChange={setSelectedCategories}
+                      />
                     </div>
                   </div>
                 )}
