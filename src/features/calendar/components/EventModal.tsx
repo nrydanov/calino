@@ -39,7 +39,7 @@ import { LocationPicker } from './LocationPicker'
 import { RecurrenceDialog } from './RecurrenceDialog'
 import { DeleteDialog } from './DeleteDialog'
 import { UnsavedChangesDialog } from './UnsavedChangesDialog'
-import { getInitialFormState, addMinutesToTimeStr } from './eventModalState'
+import { getInitialFormState, addMinutesToTimeStr, categoriesForCalendar } from './eventModalState'
 import { organizerForSave } from '../lib/defaultOrganizer'
 import { getAccountById } from '@/features/caldav/sync/accountStorage'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
@@ -304,6 +304,10 @@ export function EventModal(): JSX.Element | null {
   const [completed, setCompleted] = useState(false)
   const [priority, setPriority] = useState<TaskPriority | undefined>(undefined)
   const [selectedCategories, setSelectedCategories] = useState<string[]>(initialState.categories)
+  const offeredCategories = useMemo(
+    () => categoriesForCalendar(categories, calendars, events, calendarId, selectedCategories),
+    [categories, calendars, events, calendarId, selectedCategories]
+  )
 
   // Unsaved changes: every field the form can edit, compared with the values
   // the form was seeded with. The reset below clears `seededSnapshot` when it
@@ -2055,14 +2059,14 @@ export function EventModal(): JSX.Element | null {
               </div>
 
               <div className={styles.modalGroup}>
-                {categories.length > 0 && (
+                {offeredCategories.length > 0 && (
                   <div className={styles.modalRow2}>
                     <div className={styles.categoriesContainer}>
                       <div className={styles.categoriesLabel}>
                         {t('modals.eventModal.categories')}
                       </div>
                       <div className={styles.categoriesList}>
-                        {categories.map((cat) => (
+                        {offeredCategories.map((cat) => (
                           <button
                             key={cat.id}
                             type="button"
