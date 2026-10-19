@@ -84,6 +84,16 @@ describe('EventFormFields', () => {
     expect(screen.queryByRole('button', { name: /add reminder/i })).not.toBeInTheDocument()
   })
 
+  it('shows an occurrence as repeating by its series rule, which it cannot change', () => {
+    render(
+      <EventFormFields {...defaultProps} recurring={false} seriesRule="Every week on Wednesday" />
+    )
+    const toggle = screen.getByRole('checkbox', { name: /recurring/i })
+    expect(toggle).toBeChecked()
+    expect(toggle).toBeDisabled()
+    expect(screen.getByText('(Every week on Wednesday)')).toBeInTheDocument()
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     ;(useSettingsStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
