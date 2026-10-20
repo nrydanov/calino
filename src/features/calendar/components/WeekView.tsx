@@ -26,6 +26,7 @@ import {
   getISOWeek,
   addWeeks,
   addDays,
+  differenceInCalendarDays,
 } from 'date-fns'
 import { pad2, toLocalDateString, toEventInstant, formatDisplayDate } from '@/lib/datetime'
 import { hasDueTime } from '@/lib/events'
@@ -171,18 +172,17 @@ interface DayHeaderProps {
   isTodayDay: boolean
   isWeekStart: boolean
   allDayEvents: CalendarEvent[]
-  activeIsTimed: boolean
 }
 
 // Each day header doubles as an all-day drop target: dragging a timed event
 // onto it turns the event into an all-day event (the inverse of dragging a pill
-// down into the grid).
+// down into the grid), and dragging an all-day pill onto it moves the pill to
+// that day.
 const DayHeader = React.memo(function DayHeader({
   day,
   isTodayDay,
   isWeekStart,
   allDayEvents,
-  activeIsTimed,
 }: DayHeaderProps): JSX.Element {
   const { setNodeRef, isOver } = useDroppable({ id: `allday::${format(day, 'yyyy-MM-dd')}` })
 
@@ -207,7 +207,7 @@ const DayHeader = React.memo(function DayHeader({
       ref={setNodeRef}
       data-component="week-day-header"
       data-date={dayKey}
-      className={`${styles.dayHeader} ${isTodayDay ? styles.today : ''} ${allDayEvents.length > 0 ? styles.hasAllDayEvents : ''} ${isOver && activeIsTimed ? styles.dayHeaderDropActive : ''}`}
+      className={`${styles.dayHeader} ${isTodayDay ? styles.today : ''} ${allDayEvents.length > 0 ? styles.hasAllDayEvents : ''} ${isOver ? styles.dayHeaderDropActive : ''}`}
     >
       <div className={styles.dayName}>{formatDisplayDate(day, 'EEE')}</div>
       <div className={styles.dayNumber}>{format(day, 'd')}</div>
@@ -1088,20 +1088,44 @@ export function WeekView({ dayCount = 7 }: { dayCount?: number } = {}): JSX.Elem
       return
     }
 
-    // Dropped on a day header → convert a timed event into an all-day event.
+    // Dropped on a day header → the event or task becomes all-day on that day.
+    // A task is filed under its due day, so dueDate moves with it; an all-day
+    // event keeps its length, shifted by the day its grabbed fragment is on.
     if (droppableId.startsWith('allday::')) {
       const dayStr = droppableId.slice('allday::'.length)
       const originalEvent = events.find((e) => e.id === activeId)
-      if (!originalEvent || originalEvent.isAllDay) return
+      if (!originalEvent) return
       // Defensive: dnd-kit's useDraggable is disabled on recurring events, but
       // if some other code path triggers a drop on a recurring event, refuse
       // rather than silently moving the whole series.
       if (originalEvent.recurrence || originalEvent.rruleString) return
 
-      const allDayUpdates = {
-        start: `${dayStr}T00:00:00`,
-        end: `${dayStr}T00:00:00`,
-        isAllDay: true,
+      let allDayUpdates: { start: string; end: string; isAllDay?: boolean; dueDate?: string }
+      if (originalEvent.type === 'task') {
+        allDayUpdates = {
+          start: `${dayStr}T00:00:00`,
+          end: `${dayStr}T23:59:59`,
+          dueDate: dayStr,
+          isAllDay: true,
+        }
+      } else if (originalEvent.isAllDay) {
+        const [, grabbedDay] = String(active.id).split('::')
+        const days = differenceInCalendarDays(
+          parseISO(dayStr),
+          parseISO(grabbedDay ?? originalEvent.start)
+        )
+        if (days === 0) return
+        // Shift the date part only: all-day stamps are `yyyy-MM-dd`, optionally
+        // followed by a wall-clock time that must stay as it is.
+        const shift = (stamp: string): string =>
+          format(addDays(parseISO(stamp.slice(0, 10)), days), 'yyyy-MM-dd') + stamp.slice(10)
+        allDayUpdates = { start: shift(originalEvent.start), end: shift(originalEvent.end) }
+      } else {
+        allDayUpdates = {
+          start: `${dayStr}T00:00:00`,
+          end: `${dayStr}T00:00:00`,
+          isAllDay: true,
+        }
       }
       if (shouldDuplicate) {
         duplicateEventWithSync({
@@ -1433,7 +1457,6 @@ export function WeekView({ dayCount = 7 }: { dayCount?: number } = {}): JSX.Elem
                 isTodayDay={isToday(day)}
                 isWeekStart={idx === 0}
                 allDayEvents={allDayEventsByDay[idx]}
-                activeIsTimed={!!activeEvent && !activeEvent.isAllDay}
               />
             ))}
           </div>

@@ -106,4 +106,36 @@ test.describe('Week view multi-day all-day events', () => {
 
     expect(stored).toMatchObject({ id: EVENT_ID, isAllDay: false })
   })
+
+  test('dragging a fragment onto another day header moves the whole span', async ({ page }) => {
+    // Grab the second day's fragment and drop it on the fourth day: the event
+    // starts two days later and keeps its three-day length.
+    const fragment = page.locator(
+      `[data-component="week-day-header"][data-date="${weekStartDate(1)}"] [data-component="event-card"][aria-label*="${EVENT_TITLE}"]`
+    )
+    const header = page.locator(
+      `[data-component="week-day-header"][data-date="${weekStartDate(3)}"]`
+    )
+    const from = (await fragment.boundingBox())!
+    const to = (await header.boundingBox())!
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(from.x + from.width / 2 + 20, from.y + from.height / 2, { steps: 5 })
+    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 15 })
+    await page.mouse.up()
+
+    await expect
+      .poll(async () =>
+        page.evaluate((id) => {
+          const parsed = JSON.parse(localStorage.getItem('calino-storage') ?? '{}')
+          const event = (parsed.state?.events ?? []).find((e: { id: string }) => e.id === id)
+          return event && { start: event.start, end: event.end, isAllDay: event.isAllDay }
+        }, EVENT_ID)
+      )
+      .toEqual({
+        start: `${weekStartDate(2)}T00:00:00`,
+        end: `${weekStartDate(4)}T23:59:59`,
+        isAllDay: true,
+      })
+  })
 })
