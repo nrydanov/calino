@@ -88,6 +88,10 @@ test.describe('category colors', () => {
     await preview.getByRole('button', { name: /Open event/ }).click()
     await page.getByRole('button', { name: 'Work' }).click()
     await page.locator('[data-component="modal-save"]').click()
+    // The fork lets an existing override edit its whole series too, so the
+    // full modal asks which occurrences should receive the category change.
+    await page.getByRole('dialog').filter({ hasText: /Edit recurring event/ })
+      .getByRole('button', { name: /This event only/ }).click()
 
     await page.getByRole('button', { name: /Detached category test updated/ }).first().click()
     await page.locator('[data-component="event-preview"]').getByRole('button', { name: /Open event/ }).click()

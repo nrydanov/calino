@@ -438,6 +438,7 @@ test.describe('smoke', () => {
 
   test('skip link is the first tabbable element and jumps to the main content', async ({
     page,
+    browserName,
   }) => {
     await page.goto('/month')
     await expect(page.locator('[data-component="header"]')).toBeVisible()
@@ -447,7 +448,11 @@ test.describe('smoke', () => {
     // Hidden until focused — the link is the first element in the tab order,
     // so a single Tab from a fresh page lands on it.
     await expect(skipLink).not.toBeInViewport()
-    await page.keyboard.press('Tab')
+    // macOS WebKit uses Option-Tab to include links in keyboard navigation.
+    // https://support.apple.com/guide/safari/keyboard-shortcuts-and-gestures-cpsh003/mac
+    await page.keyboard.press(
+      browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab'
+    )
     await expect(skipLink).toBeInViewport()
 
     // Activating it moves focus into the main landmark.

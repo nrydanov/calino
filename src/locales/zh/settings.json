@@ -506,6 +506,20 @@
       "desc": "日程即将开始时播放声音",
       "ariaLabel": "声音提醒"
     },
+    "server": "服务器提醒",
+    "serverPush": {
+      "desc": "即使 Calino 已关闭，服务器也会发送提醒通知。",
+      "descOn": "已在此浏览器中开启。",
+      "descInstallFirst": "将 Calino 添加到主屏幕，从主屏幕打开应用，然后在应用中开启此功能。",
+      "turnOn": "开启",
+      "sendTest": "发送测试通知",
+      "enabled": "服务器提醒已开启，测试通知即将送达。",
+      "failed": "无法开启服务器提醒：{{error}}",
+      "testSent": "测试通知已发送。",
+      "testFailed": "无法发送测试通知：{{error}}",
+      "offer": "即使 Calino 已关闭，仍接收来自 {{name}} 的提醒？",
+      "notNow": "暂时不要"
+    },
     "deviceCalendar": "设备日历",
     "calendarMirror": {
       "label": "同步到 Android 日历（测试版）",
