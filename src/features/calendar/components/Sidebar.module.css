@@ -645,16 +645,49 @@
   background: rgba(var(--ink-raw, 44, 40, 33), 0.04);
 }
 
-.calendarItem:hover .syncButton {
+.calendarItem:hover .syncButton,
+.calendarItem:hover .muteButton {
   opacity: 1;
 }
 
 /* Without a hover state there is no way to reveal this, so per-calendar sync
    was simply unreachable on touch. Show it outright instead. */
 @media (hover: none) {
-  .calendarItem .syncButton {
+  .calendarItem .syncButton,
+  .calendarItem .muteButton {
     opacity: 1;
   }
+}
+
+/* Same look as the sync button beside it; a muted calendar shows it always. */
+.muteButton {
+  opacity: 0;
+  background: none;
+  border: none;
+  padding: var(--space-1);
+  cursor: pointer;
+  color: var(--ink-2);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  transition:
+    opacity var(--dur-fast),
+    color var(--dur-fast);
+}
+
+.muteButton + .syncButton {
+  margin-left: 0;
+}
+
+.muteButton:hover {
+  color: var(--ink);
+  background: rgba(var(--ink-raw, 44, 40, 33), 0.06);
+}
+
+.muteButton.muted {
+  opacity: 1;
 }
 
 .checkbox {
