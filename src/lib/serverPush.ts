@@ -13,7 +13,9 @@
 
 import { basicAuthHeader } from '@/features/caldav/client/basicAuth'
 import { getCredentialById } from '@/features/caldav/client/credentials'
+import { getAllAccounts } from '@/features/caldav/sync/accountStorage'
 import type { CalDAVAccount } from '@/features/caldav/types'
+import { useCalendarStore } from '@/store/calendarStore'
 import { useServerPushStore } from '@/store/serverPushStore'
 
 const WORKER_URL = '/push-sw.js'
@@ -157,9 +159,22 @@ export async function enableServerPush(account: CalDAVAccount, publicKey: string
 }
 
 /**
+ * The account's calendars silenced from the sidebar, by URL. A CalDAV
+ * calendar's id is its URL; the server knows it by the last segment.
+ */
+export function mutedCalendarUrls(accountId: string): string[] {
+  return useCalendarStore
+    .getState()
+    .calendars.filter(
+      (calendar) => calendar.accountId === accountId && calendar.notifyReminders === false
+    )
+    .map((calendar) => calendar.id)
+}
+
+/**
  * Gives the subscription to the account's server, which replaces any entry for
- * the same endpoint, and records that the server now sends this account's
- * reminders to this browser.
+ * the same endpoint, along with the calendars it is not to remind of, and
+ * records that the server now sends this account's reminders to this browser.
  */
 async function handOver(
   account: CalDAVAccount,
@@ -172,7 +187,7 @@ async function handOver(
       'Content-Type': 'application/json',
       Authorization: await authorization(account),
     },
-    body: JSON.stringify(subscription),
+    body: JSON.stringify({ ...subscription.toJSON(), muted: mutedCalendarUrls(account.id) }),
   })
   if (!response.ok) throw new Error(`the server answered ${response.status}`)
   rememberEndpoint(account.id, subscription.endpoint)
@@ -198,6 +213,15 @@ export async function confirmServerPush(account: CalDAVAccount): Promise<boolean
   } catch {
     return false
   }
+}
+
+/**
+ * Tells the server of a calendar silenced or turned back on, when this browser
+ * takes that account's reminders from it.
+ */
+export async function resendMutedCalendars(accountId: string): Promise<void> {
+  const account = getAllAccounts().find((candidate) => candidate.id === accountId)
+  if (account) await confirmServerPush(account)
 }
 
 /** Asks the server for a test notification to this account's subscriptions. */

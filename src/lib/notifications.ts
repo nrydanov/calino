@@ -5,7 +5,7 @@ import { addDays as addDayKey } from '@/lib/datetime'
 import { useSettingsStore } from '@/store/settingsStore'
 import i18n, { currentLanguage } from '@/lib/i18n'
 import type { Calendar, CalendarEvent, Reminder } from '@/types'
-import { calendarMutesReminders, useCalendarStore } from '@/store/calendarStore'
+import { calendarSilencesReminders, useCalendarStore } from '@/store/calendarStore'
 import { hasDueTime } from '@/lib/events'
 import { taskDueInstant } from '@/lib/taskReminders'
 
@@ -46,7 +46,7 @@ export function makeDefaultReminders(defaultReminderMinutes: number | null): Rem
 export function getEffectiveReminders(event: CalendarEvent, calendar?: Calendar): Reminder[] {
   const resolved =
     calendar ?? useCalendarStore.getState().calendars.find((c) => c.id === event.calendarId)
-  if (calendarMutesReminders(resolved)) return []
+  if (calendarSilencesReminders(resolved)) return []
   return event.reminders ?? []
 }
 

@@ -2,7 +2,7 @@ import { isBefore, parseISO, setHours, startOfDay } from 'date-fns'
 import { toEventInstant } from '@/lib/datetime'
 import { hasDueTime } from '@/lib/events'
 import { resolveRecurringTasks } from '@/lib/openTasks'
-import { calendarMutesReminders } from '@/store/calendarStore'
+import { calendarSilencesReminders } from '@/store/calendarStore'
 import type { Calendar, CalendarEvent } from '@/types'
 
 /** Reminder id carried by the synthetic due-date reminder of a task. */
@@ -52,7 +52,7 @@ export function buildTaskDueReminderEvents(
   for (const task of resolveRecurringTasks(events)) {
     if (task.type !== 'task' || task.completed || !task.dueDate) continue
     const calendar = calendarById.get(task.calendarId)
-    if (!calendar?.isVisible || calendarMutesReminders(calendar)) continue
+    if (!calendar?.isVisible || calendarSilencesReminders(calendar)) continue
     const due = taskDueInstant(task)
     if (!due || isBefore(due, from) || isBefore(to, due)) continue
     reminders.push({
