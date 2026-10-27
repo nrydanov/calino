@@ -178,9 +178,10 @@ export interface Calendar {
   // True for webcal subscriptions — event mutation is blocked at the store
   // boundary via isCalendarReadOnly().
   readOnly?: boolean
-  // Webcal only. Absent or false means the publisher's VALARMs do not fire
-  // (the default for an overlay). Set true from the subscription edit modal
-  // to opt in. CalDAV calendars ignore this field.
+  // Webcal: absent or false means the publisher's VALARMs do not fire (the
+  // default for an overlay). Set true from the subscription edit modal to opt
+  // in. Any other calendar: false, set from the sidebar, silences its
+  // reminders and the server's push of them; absent means they fire.
   notifyReminders?: boolean
   // Task completion mode for recurring tasks in this calendar.
   taskCompletionMode?: 'override' | 'rolling'
