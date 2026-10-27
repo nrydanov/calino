@@ -78,6 +78,8 @@
       "failedToDeleteCalendar": "No se pudo eliminar el calendario",
       "hideTasksInViews": "Ocultar tareas en las vistas",
       "showTasksInViews": "Mostrar tareas en las vistas",
+      "muteReminders": "Silenciar recordatorios",
+      "unmuteReminders": "Activar recordatorios",
       "showCompletedTasks": "Mostrar tareas completadas",
       "hideCompletedTasks": "Ocultar tareas completadas",
       "exportCalendar": "Exportar calendario (.ics)",

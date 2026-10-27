@@ -497,6 +497,16 @@ export function calendarMutesReminders(calendar: Calendar | undefined): boolean 
   return calendar?.source === 'webcal' && calendar.notifyReminders !== true
 }
 
+/**
+ * Whether this calendar's reminders go off. Any other calendar can be
+ * silenced from the sidebar (`notifyReminders: false`); unlike a webcal
+ * overlay it keeps its reminders editable, since they are the event's own.
+ * The server's push skips it as well (`mutedCalendarUrls`).
+ */
+export function calendarSilencesReminders(calendar: Calendar | undefined): boolean {
+  return calendarMutesReminders(calendar) || calendar?.notifyReminders === false
+}
+
 const DEFAULT_CALENDAR: Calendar = {
   id: 'default',
   name: 'Offline calendar',

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { pushBase, serverPublicKey } from '../serverPush'
+import { mutedCalendarUrls, pushBase, serverPublicKey } from '../serverPush'
 import type { CalDAVAccount } from '@/features/caldav/types'
+import type { Calendar } from '@/types'
+import { useCalendarStore } from '@/store/calendarStore'
 
 function account(serverUrl: string, proxyUrl: string | null = null): CalDAVAccount {
   return {
@@ -54,5 +56,28 @@ describe('serverPublicKey', () => {
       })
     )
     expect(await serverPublicKey(account('https://x.org/dav/'))).toBeNull()
+  })
+})
+
+describe('mutedCalendarUrls', () => {
+  it('lists the account calendars silenced from the sidebar, by URL', () => {
+    const calendar = (id: string, accountId: string, notifyReminders?: boolean): Calendar => ({
+      id,
+      name: id,
+      color: '#000',
+      isVisible: true,
+      isDefault: false,
+      accountId,
+      showTasksInViews: true,
+      notifyReminders,
+    })
+    useCalendarStore.setState({
+      calendars: [
+        calendar('https://x.org/dav/calendars/events/', 'a', false),
+        calendar('https://x.org/dav/calendars/tasks-unassigned/', 'a'),
+        calendar('https://y.org/dav/calendars/events/', 'b', false),
+      ],
+    })
+    expect(mutedCalendarUrls('a')).toEqual(['https://x.org/dav/calendars/events/'])
   })
 })

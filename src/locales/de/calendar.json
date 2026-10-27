@@ -78,6 +78,8 @@
       "failedToDeleteCalendar": "Kalender konnte nicht gelöscht werden",
       "hideTasksInViews": "Aufgaben in Ansichten ausblenden",
       "showTasksInViews": "Aufgaben in Ansichten anzeigen",
+      "muteReminders": "Erinnerungen stummschalten",
+      "unmuteReminders": "Erinnerungen einschalten",
       "showCompletedTasks": "Erledigte Aufgaben anzeigen",
       "hideCompletedTasks": "Erledigte Aufgaben ausblenden",
       "exportCalendar": "Kalender exportieren (.ics)",

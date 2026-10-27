@@ -78,6 +78,8 @@
       "failedToDeleteCalendar": "Failed to delete calendar",
       "hideTasksInViews": "Hide Tasks in Views",
       "showTasksInViews": "Show Tasks in Views",
+      "muteReminders": "Mute Reminders",
+      "unmuteReminders": "Unmute Reminders",
       "showCompletedTasks": "Show Completed Tasks",
       "hideCompletedTasks": "Hide Completed Tasks",
       "exportCalendar": "Export Calendar (.ics)",
