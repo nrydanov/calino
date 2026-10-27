@@ -78,6 +78,8 @@
       "failedToDeleteCalendar": "Kunne ikke slette kalenderen",
       "hideTasksInViews": "Skjul opgaver i visninger",
       "showTasksInViews": "Vis opgaver i visninger",
+      "muteReminders": "Slå påmindelser fra",
+      "unmuteReminders": "Slå påmindelser til",
       "showCompletedTasks": "Vis fuldførte opgaver",
       "hideCompletedTasks": "Skjul fuldførte opgaver",
       "exportCalendar": "Eksportér kalender (.ics)",

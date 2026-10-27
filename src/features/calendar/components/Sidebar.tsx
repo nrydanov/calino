@@ -36,6 +36,7 @@ import { useCalDAV } from '@/features/caldav/hooks/useCalDAV'
 import { useUpdateCheck } from '@/hooks/useUpdateCheck'
 import { showToast } from '@/lib/toast'
 import { exportCalendarIcs } from '@/lib/icsExport'
+import { resendMutedCalendars } from '@/lib/serverPush'
 import { AddCalendarModal } from './AddCalendarModal'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { SubscribeCalendarModal } from './SubscribeCalendarModal'
@@ -1095,6 +1096,29 @@ export function Sidebar({
                       closeContextMenu()
                     },
                   },
+                  // A webcal overlay mutes its reminders in its own modal.
+                  ...(calendars.find((c) => c.id === contextMenu.calendarId)?.source === 'webcal'
+                    ? []
+                    : [
+                        {
+                          label:
+                            calendars.find((c) => c.id === contextMenu.calendarId)
+                              ?.notifyReminders === false
+                              ? t('views.sidebar.unmuteReminders')
+                              : t('views.sidebar.muteReminders'),
+                          onClick: () => {
+                            const calendar = calendars.find((c) => c.id === contextMenu.calendarId)
+                            if (calendar) {
+                              updateCalendar(contextMenu.calendarId, {
+                                notifyReminders:
+                                  calendar.notifyReminders === false ? undefined : false,
+                              })
+                              if (calendar.accountId) void resendMutedCalendars(calendar.accountId)
+                            }
+                            closeContextMenu()
+                          },
+                        },
+                      ]),
                   {
                     label: hideCompletedTasksInMonthView
                       ? t('views.sidebar.showCompletedTasks')

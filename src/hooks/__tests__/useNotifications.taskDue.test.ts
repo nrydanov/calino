@@ -67,6 +67,8 @@ vi.mock('@/store/calendarStore', () => {
     useCalendarStore,
     calendarMutesReminders: (c: Calendar | undefined) =>
       c?.source === 'webcal' && c.notifyReminders !== true,
+    calendarSilencesReminders: (c: Calendar | undefined) =>
+      (c?.source === 'webcal' && c.notifyReminders !== true) || c?.notifyReminders === false,
   }
 })
 

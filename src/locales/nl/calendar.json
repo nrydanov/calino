@@ -78,6 +78,8 @@
       "failedToDeleteCalendar": "Agenda verwijderen mislukt",
       "hideTasksInViews": "Taken verbergen in weergaven",
       "showTasksInViews": "Taken tonen in weergaven",
+      "muteReminders": "Herinneringen dempen",
+      "unmuteReminders": "Herinneringen inschakelen",
       "showCompletedTasks": "Voltooide taken tonen",
       "hideCompletedTasks": "Voltooide taken verbergen",
       "exportCalendar": "Agenda exporteren (.ics)",

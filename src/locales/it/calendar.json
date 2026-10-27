@@ -78,6 +78,8 @@
       "failedToDeleteCalendar": "Impossibile eliminare il calendario",
       "hideTasksInViews": "Nascondi le attività nelle viste",
       "showTasksInViews": "Mostra le attività nelle viste",
+      "muteReminders": "Disattiva i promemoria",
+      "unmuteReminders": "Attiva i promemoria",
       "showCompletedTasks": "Mostra le attività completate",
       "hideCompletedTasks": "Nascondi le attività completate",
       "exportCalendar": "Esporta calendario (.ics)",
