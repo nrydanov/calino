@@ -65,10 +65,23 @@ function swPrecache(): Plugin {
       const dist = new URL('./dist/', import.meta.url)
       const worker = new URL('sw.js', dist)
       if (!existsSync(worker)) return
-      const assets = readdirSync(new URL('assets/', dist))
+      // Public themes and branding are copied beside assets/, and may not be
+      // requested again after the new worker deletes the previous cache.
+      const collectFiles = (prefix = ''): string[] =>
+        readdirSync(new URL(prefix, dist), { withFileTypes: true }).flatMap((entry) => {
+          if (entry.name.startsWith('.')) return []
+          const name = `${prefix}${entry.name}`
+          return entry.isDirectory() ? collectFiles(`${name}/`) : [name]
+        })
+      const assets = collectFiles()
+        .filter((name) => !['index.html', 'headless.html', 'sw.js', 'push-sw.js'].includes(name))
         .sort()
-        .map((name) => `/assets/${name}`)
-      const id = createHash('sha256').update(assets.join('\n')).digest('hex').slice(0, 8)
+        .map((name) => `/${name}`)
+      // Public filenames are stable, so their contents must also change the
+      // cache name when a theme, icon or manifest changes.
+      const hash = createHash('sha256')
+      for (const asset of assets) hash.update(asset).update(readFileSync(new URL(asset.slice(1), dist)))
+      const id = hash.digest('hex').slice(0, 8)
       const source = readFileSync(worker, 'utf-8')
         .replace('const BUILD_ASSETS = []', `const BUILD_ASSETS = ${JSON.stringify(assets)}`)
         .replace("'__BUILD_ID__'", JSON.stringify(id))
