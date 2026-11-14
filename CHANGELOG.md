@@ -4,6 +4,12 @@ All notable changes to Calino will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Remember displayed browser reminders across app restarts, so reopening Calino does not replay the last 12 hours of reminders. Edited reminder times still trigger normally.
+- Wait for an existing Web Push subscription to be confirmed before showing local reminders for that account. Other accounts keep their local reminders, and a failed confirmation restores local delivery.
+- Limit subscription HTTP requests to 15 seconds so an unresponsive server does not indefinitely delay local reminders.
+
 ## [0.42.0] - 2026-11-03
 
 This release adds a home timezone that Calino uses throughout the calendar, custom reminder times, improves month-view spacing and event-time visibility, and fixes several CalDAV sync problems.

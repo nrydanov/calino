@@ -20,6 +20,7 @@ import {
 } from '@/lib/nativeReminders'
 import { useCalendarMirrorStore, mirrorOwnsReminders } from '@/store/calendarMirrorStore'
 import { useServerPushStore } from '@/store/serverPushStore'
+import { loadReminderHistory, saveReminderHistory } from '@/lib/reminderHistory'
 import { toEventInstant } from '@/lib/datetime'
 import { buildTaskDueReminderEvents } from '@/lib/taskReminders'
 import { parseISO, isWithinInterval, addMinutes, addHours, addDays, isAfter } from 'date-fns'
@@ -101,23 +102,25 @@ export function useNotifications(): void {
   // down for their calendars, or it would remind of the same event again while
   // Calino is open.
   const serverOwnedAccounts = useServerPushStore((state) => state.accountIds)
+  const pendingAccounts = useServerPushStore((state) => state.pendingAccountIds)
   const calendars = useCalendarStore((state) => state.calendars)
   const pageReminderEvents = useMemo(() => {
-    if (serverOwnedAccounts.length === 0) return reminderEvents
+    if (serverOwnedAccounts.length === 0 && pendingAccounts.length === 0) return reminderEvents
     const serverOwnedCalendars = new Set(
       calendars
         .filter(
-          (calendar) => calendar.accountId && serverOwnedAccounts.includes(calendar.accountId)
+          (calendar) =>
+            calendar.accountId &&
+            (serverOwnedAccounts.includes(calendar.accountId) ||
+              pendingAccounts.includes(calendar.accountId))
         )
         .map((calendar) => calendar.id)
     )
     return reminderEvents.filter((event) => !serverOwnedCalendars.has(event.calendarId))
-  }, [reminderEvents, calendars, serverOwnedAccounts])
+  }, [reminderEvents, calendars, serverOwnedAccounts, pendingAccounts])
   // Track reminder ID → scheduled trigger timestamp so we can re-fire
   // when the event is edited (trigger time changes).
-  const shownReminders = useRef<Map<string, number>>(new Map())
-  // Track previous enableNotifications to detect disable→enable transitions.
-  const prevEnabledRef = useRef(enableNotifications)
+  const shownReminders = useRef<Map<string, number> | null>(null)
 
   // Native: real OS-scheduled notifications (fire even with the app closed),
   // replacing the setInterval-based polling below, which only runs while the
@@ -175,8 +178,6 @@ export function useNotifications(): void {
   }, [reminderEvents, taskDueReminders, enableNotifications, providerOwnsReminders])
 
   useEffect(() => {
-    prevEnabledRef.current = enableNotifications
-
     if (Capacitor.isNativePlatform()) return
 
     if (!enableNotifications) {
@@ -185,13 +186,10 @@ export function useNotifications(): void {
       return
     }
 
-    // On a fresh disable→enable transition the map is intentionally kept
-    // so that reminders outside the check window are not re-shown.
-    // The map only evicts entries when the trigger time changes (event edit).
-
     if (!('Notification' in window) || Notification.permission !== 'granted') {
       return
     }
+    const reminderHistory = (shownReminders.current ??= loadReminderHistory())
 
     const checkReminders = (): void => {
       const now = new Date()
@@ -229,7 +227,7 @@ export function useNotifications(): void {
 
           const reminderId = createNotificationId(event.id, reminder.id)
           const triggerTimestamp = reminderTime.getTime()
-          const previousTimestamp = shownReminders.current.get(reminderId)
+          const previousTimestamp = reminderHistory.get(reminderId)
           const neverShown = previousTimestamp === undefined
 
           const inLiveWindow = isWithinInterval(reminderTime, {
@@ -237,10 +235,7 @@ export function useNotifications(): void {
             end: checkWindowEnd,
           })
           // R5.1 — catch-up window: trigger in (catchUpCutoff, checkWindowStart)
-          // and never shown. The neverShown gate prevents re-firing on
-          // app reloads if the map was already cleared or evicted; we
-          // only catch up for triggers that genuinely slipped through
-          // (machine was asleep).
+          // and never shown. Persisted history prevents repeats on reload.
           const inCatchUpWindow =
             neverShown &&
             isAfter(reminderTime, catchUpCutoff) &&
@@ -252,7 +247,8 @@ export function useNotifications(): void {
             (neverShown || previousTimestamp !== triggerTimestamp)
 
           if (shouldFire) {
-            shownReminders.current.set(reminderId, triggerTimestamp)
+            reminderHistory.set(reminderId, triggerTimestamp)
+            saveReminderHistory(reminderHistory)
 
             const body = reminderBody(event)
 

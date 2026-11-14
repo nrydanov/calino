@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { toast } from 'sonner'
 import i18n from '@/lib/i18n'
 import { getAllAccounts } from '@/features/caldav/sync/accountStorage'
+import { useServerPushStore } from '@/store/serverPushStore'
 import {
   confirmServerPush,
   enableServerPushWithTest,
@@ -35,15 +36,17 @@ function dismissed(): boolean {
  */
 export function useServerPush(): void {
   useEffect(() => {
-    if (pushAvailability() !== 'ok') return
+    if (pushAvailability() !== 'ok') {
+      useServerPushStore.setState({ pendingAccountIds: [] })
+      return
+    }
     let cancelled = false
 
-    void (async () => {
-      for (const account of getAllAccounts()) {
-        if (cancelled) return
-        await confirmServerPush(account)
-      }
-    })()
+    for (const account of getAllAccounts()) {
+      void confirmServerPush(account)
+        .catch(() => false)
+        .finally(() => useServerPushStore.getState().finishConfirmation(account.id))
+    }
 
     const offering = !dismissed() && (isStandalone() || matchMedia('(pointer: coarse)').matches)
     const timer = setTimeout(() => {

@@ -60,7 +60,12 @@ describe('useNotifications - reminders the server sends as Web Push', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
-    useServerPushStore.setState({ accountIds: [] })
+    useServerPushStore.setState({ accountIds: [], pendingAccountIds: [] })
+    const stored = new Map<string, string>()
+    vi.mocked(localStorage.getItem).mockImplementation((key) => stored.get(key) ?? null)
+    vi.mocked(localStorage.setItem).mockImplementation((key, value) => {
+      stored.set(key, value)
+    })
     Object.defineProperty(globalThis, 'Notification', {
       value: { permission: 'granted' },
       writable: true,
@@ -69,6 +74,8 @@ describe('useNotifications - reminders the server sends as Web Push', () => {
   })
 
   afterEach(() => {
+    vi.mocked(localStorage.getItem).mockReset()
+    vi.mocked(localStorage.setItem).mockReset()
     vi.useRealTimers()
   })
 
@@ -110,5 +117,45 @@ describe('useNotifications - reminders the server sends as Web Push', () => {
     })
 
     expect(mockShowNotification).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not repeat a catch-up reminder after reopening the app', () => {
+    currentEvents = [eventIn('reopen', 'icloud-cal')]
+    currentEvents[0].start = new Date(Date.now() - 60 * 60_000).toISOString()
+    const first = renderHook(() => useNotifications())
+    expect(mockShowNotification).toHaveBeenCalledTimes(1)
+    first.unmount()
+    renderHook(() => useNotifications())
+    expect(mockShowNotification).toHaveBeenCalledTimes(1)
+  })
+
+  it('waits for saved push subscriptions without delaying other accounts', () => {
+    currentEvents = [eventIn('club-meeting', 'clubs-cal'), eventIn('dentist', 'icloud-cal')]
+    useServerPushStore.setState({ pendingAccountIds: ['clubs'] })
+    renderHook(() => useNotifications())
+    expect(mockShowNotification.mock.calls.map(([title]) => title)).toEqual(['Event dentist'])
+    act(() => {
+      useServerPushStore.getState().markServerOwned('clubs')
+      useServerPushStore.getState().finishConfirmation('clubs')
+    })
+    expect(mockShowNotification).toHaveBeenCalledTimes(1)
+  })
+
+  it('falls back to local reminders when startup confirmation fails', () => {
+    currentEvents = [eventIn('club-meeting', 'clubs-cal')]
+    useServerPushStore.setState({ pendingAccountIds: ['clubs'] })
+    renderHook(() => useNotifications())
+    expect(mockShowNotification).not.toHaveBeenCalled()
+    act(() => useServerPushStore.getState().finishConfirmation('clubs'))
+    expect(mockShowNotification).toHaveBeenCalledTimes(1)
+  })
+
+  it('still reminds after reopening when an event trigger changes', () => {
+    currentEvents = [eventIn('edited', 'icloud-cal')]
+    const first = renderHook(() => useNotifications())
+    first.unmount()
+    currentEvents[0].start = new Date(Date.now() + 15.5 * 60_000).toISOString()
+    renderHook(() => useNotifications())
+    expect(mockShowNotification).toHaveBeenCalledTimes(2)
   })
 })
