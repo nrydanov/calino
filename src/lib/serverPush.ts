@@ -16,12 +16,12 @@ import { getCredentialById } from '@/features/caldav/client/credentials'
 import { getAllAccounts } from '@/features/caldav/sync/accountStorage'
 import type { CalDAVAccount } from '@/features/caldav/types'
 import { useCalendarStore } from '@/store/calendarStore'
-import { useServerPushStore } from '@/store/serverPushStore'
+import { REGISTERED_SERVER_PUSH_KEY, useServerPushStore } from '@/store/serverPushStore'
 
 const WORKER_URL = '/push-sw.js'
 const WORKER_SCOPE = '/push-sw/'
 /** The endpoint a server accepted for an account, by account id. */
-const REGISTERED_KEY = 'calino_server_push_registered'
+const REGISTERED_KEY = REGISTERED_SERVER_PUSH_KEY
 
 /** iOS exposes `navigator.standalone`; nothing else does. */
 const onIos = typeof navigator !== 'undefined' && 'standalone' in navigator
@@ -183,6 +183,7 @@ async function handOver(
 ): Promise<void> {
   const response = await fetch(`${base}subscribe`, {
     method: 'POST',
+    signal: AbortSignal.timeout(15_000),
     headers: {
       'Content-Type': 'application/json',
       Authorization: await authorization(account),

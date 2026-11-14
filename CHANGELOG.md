@@ -4,6 +4,7 @@ All notable changes to Calino will be documented in this file.
 
 ## [Unreleased]
 
+
 ## [0.43.0] - 2026-11-26
 
 Set an event’s time zone, choose how each calendar completes repeating tasks, and reorder or isolate calendars in the sidebar. Calino also adds attendee suggestions and Simplified Chinese. Self-hosted installs gain runtime configuration and subpath support, and this release improves interoperability with CalDAV, CardDAV, and JMAP servers.
@@ -89,6 +90,11 @@ Set an event’s time zone, choose how each calendar completes repeating tasks, 
 - **Sidebar card shadows** are no longer clipped.
 
 Thanks to [@brog-io](https://github.com/brog-io), [@madepass](https://github.com/madepass), [@ateebamateen21](https://github.com/ateebamateen21), [@GregoryLi360](https://github.com/GregoryLi360) and [@arustler](https://github.com/arustler) for reporting issues fixed in this release, and to [@karan](https://github.com/karan) for the groundwork and client fixtures for rolling recurring-task completion ([#260](https://github.com/Ivan-Malinovski/calino/pull/260)).
+### Fixed
+
+- Remember displayed browser reminders across app restarts, so reopening Calino does not replay the last 12 hours of reminders. Edited reminder times still trigger normally.
+- Wait for an existing Web Push subscription to be confirmed before showing local reminders for that account. Other accounts keep their local reminders, and a failed confirmation restores local delivery.
+- Limit subscription HTTP requests to 15 seconds so an unresponsive server does not indefinitely delay local reminders.
 
 ## [0.42.0] - 2026-11-03
 
