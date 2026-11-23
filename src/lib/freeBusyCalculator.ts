@@ -88,8 +88,7 @@ export function checkAttendeeAvailability(
 
   // A server answered and reported nothing busy — that is a real "free".
   if (freeBusyPeriods) return 'available'
-  // Local evidence exists and none of it clashes.
-  if (relevant.length > 0) return 'available'
+  // Shared events reveal conflicts, but only the server can confirm availability.
 
   return 'unknown'
 }

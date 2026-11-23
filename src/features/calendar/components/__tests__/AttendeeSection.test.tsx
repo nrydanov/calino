@@ -245,7 +245,7 @@ describe('AttendeeSection - availability', () => {
     expect(document.querySelectorAll('[data-component="attendee-availability"]')).toHaveLength(0)
   })
 
-  it('reports unknown when nothing is known about the attendee', () => {
+  it('omits the availability badge when nothing is known about the attendee', () => {
     renderAttendeeSection({
       attendees: [{ email: 'a@test.com' }],
       startIso: START,
@@ -253,8 +253,7 @@ describe('AttendeeSection - availability', () => {
     })
 
     const badge = document.querySelector('[data-component="attendee-availability"]')
-    expect(badge).toHaveAttribute('data-availability', 'unknown')
-    expect(badge).toHaveTextContent('Unknown')
+    expect(badge).toBeNull()
   })
 
   it('reports busy and warns when a local event naming the attendee overlaps', () => {
@@ -280,18 +279,9 @@ describe('AttendeeSection - availability', () => {
       'data-availability',
       'busy'
     )
+    expect(screen.getByLabelText('a@test.com: Busy at this time')).toBeInTheDocument()
     expect(screen.getByText(/1 attendee has a scheduling conflict/i)).toBeInTheDocument()
     expect(screen.getByText(/You can still save/i)).toBeInTheDocument()
-  })
-
-  it('labels the badge for screen readers rather than relying on colour', () => {
-    renderAttendeeSection({
-      attendees: [{ email: 'a@test.com', name: 'Alice' }],
-      startIso: START,
-      endIso: END,
-    })
-
-    expect(screen.getByLabelText('Alice: Unknown at this time')).toBeInTheDocument()
   })
 
   it('does not warn when the only overlapping event is the one being edited', () => {

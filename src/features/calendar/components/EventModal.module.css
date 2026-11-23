@@ -1344,7 +1344,7 @@
 }
 
 .moreOptionsOpen {
-  max-height: 1200px;
+  max-height: none;
   opacity: 1;
 }
 

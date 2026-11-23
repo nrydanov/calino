@@ -91,12 +91,12 @@ describe('checkAttendeeAvailability', () => {
     expect(checkAttendeeAvailability(ATTENDEE, START, END, [makeEvent()])).toBe('busy')
   })
 
-  it('is available when local evidence exists but does not overlap', () => {
+  it('stays unknown when local evidence exists but does not overlap', () => {
     const elsewhere = makeEvent({
       start: '2026-03-10T14:00:00.000Z',
       end: '2026-03-10T15:00:00.000Z',
     })
-    expect(checkAttendeeAvailability(ATTENDEE, START, END, [elsewhere])).toBe('available')
+    expect(checkAttendeeAvailability(ATTENDEE, START, END, [elsewhere])).toBe('unknown')
   })
 
   it('does not let an event conflict with itself', () => {
@@ -135,6 +135,6 @@ describe('checkAttendeeAvailability', () => {
 
   it('ignores local events with unparseable dates instead of throwing', () => {
     const broken = makeEvent({ start: 'nope', end: 'also nope' })
-    expect(checkAttendeeAvailability(ATTENDEE, START, END, [broken])).toBe('available')
+    expect(checkAttendeeAvailability(ATTENDEE, START, END, [broken])).toBe('unknown')
   })
 })
