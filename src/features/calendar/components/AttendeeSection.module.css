@@ -12,6 +12,8 @@
 }
 
 .organizerBadge {
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -43,17 +45,17 @@
 .attendeeList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  margin-bottom: 8px;
+  max-height: min(16rem, 35vh);
+  overflow-y: auto;
+  margin-top: 8px;
 }
 
 .attendeeRow {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 5px 8px;
-  background: var(--color-bg-secondary, #f5f5f5);
-  border-radius: var(--radius-sm);
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--color-border-subtle);
   font-size: 13px;
 }
 
@@ -98,8 +100,7 @@
   flex-shrink: 0;
   font-size: 10px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: normal;
   padding: 2px 8px;
   border-radius: 10px;
   white-space: nowrap;
@@ -157,6 +158,7 @@
 }
 
 .addAttendeeInput {
+  min-width: 0;
   flex: 1;
   padding: 6px 8px;
   border: 1px solid var(--color-border, #ddd);
@@ -219,8 +221,7 @@
   padding: 2px 8px;
   font-size: 10px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: normal;
   white-space: nowrap;
   border-radius: 10px;
 }

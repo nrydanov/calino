@@ -114,12 +114,13 @@ test.describe('attendees and scheduling', () => {
     )
   })
 
-  test('reports unknown for an attendee with no local evidence', async ({ page }) => {
+  test('lets you add and remove guests on a long list without implying availability', async ({ page }) => {
     const day = todayLocal()
     await seedEvents(page, [
       {
         id: 'lonely',
         title: 'Solo Block',
+        attendees: Array.from({ length: 48 }, (_, i) => ({ email: `guest${i}@example.org` })),
         start: `${day}T14:00:00`,
         end: `${day}T15:00:00`,
       },
@@ -138,10 +139,10 @@ test.describe('attendees and scheduling', () => {
     await attendeeInput.fill('stranger@elsewhere.test')
     await attendeeInput.press('Enter')
 
-    await expect(page.locator('[data-component="attendee-availability"]').first()).toHaveAttribute(
-      'data-availability',
-      'unknown'
-    )
+    const remove = page.getByRole('button', { name: /remove.*stranger@elsewhere.test/i })
+    await remove.click()
+    await expect(remove).toHaveCount(0)
+    await expect(page.locator('[data-component="attendee-availability"]')).toHaveCount(0)
     await expect(page.locator('[data-component="attendee-conflicts"]')).toHaveCount(0)
   })
 })

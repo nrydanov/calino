@@ -200,10 +200,15 @@ export function AttendeeSection({
     const result = new Map<string, Availability>()
     if (!startIso || !endIso) return result
     for (const attendee of attendees) {
-      result.set(
+      const status = checkAttendeeAvailability(
         attendee.email,
-        checkAttendeeAvailability(attendee.email, startIso, endIso, events, null, excludeEventId)
+        startIso,
+        endIso,
+        events,
+        null,
+        excludeEventId
       )
+      if (status !== 'unknown') result.set(attendee.email, status)
     }
     return result
   }, [attendees, startIso, endIso, events, excludeEventId])
@@ -327,6 +332,31 @@ export function AttendeeSection({
             {organizer.name || getDisplayName(organizer.email, organizer.name)}
           </span>
           <span className={styles.organizerEmail}>{organizer.email}</span>
+        </div>
+      )}
+
+      <div className={styles.addAttendeeRow}>
+        <input
+          type="email"
+          placeholder={t('modals.attendees.addAttendeePlaceholder')}
+          value={inputValue}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className={styles.addAttendeeInput}
+          aria-label={t('modals.attendees.addAttendeeAria')}
+        />
+        <button
+          type="button"
+          className={styles.addAttendeeButton}
+          onClick={handleAdd}
+          disabled={!inputValue.trim()}
+        >
+          {t('modals.attendees.add')}
+        </button>
+      </div>
+      {inputError && (
+        <div style={{ color: 'var(--color-error)', fontSize: '12px', marginTop: '4px' }}>
+          {inputError}
         </div>
       )}
 
