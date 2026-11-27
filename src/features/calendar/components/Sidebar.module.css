@@ -655,14 +655,16 @@
   background: rgba(var(--ink-raw, 44, 40, 33), 0.04);
 }
 
-.calendarItem:hover .syncButton {
+.calendarItem:hover .syncButton,
+.calendarItem:hover .muteButton {
   opacity: 1;
 }
 
 /* Without a hover state there is no way to reveal this, so per-calendar sync
    was simply unreachable on touch. Show it outright instead. */
 @media (hover: none) {
-  .calendarItem .syncButton {
+  .calendarItem .syncButton,
+  .calendarItem .muteButton {
     opacity: 1;
   }
 }
@@ -927,6 +929,28 @@
 .renameInput:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(196, 168, 154, 0.15);
+}
+
+.muteButton {
+  opacity: 0;
+  background: none;
+  border: none;
+  padding: var(--space-1);
+  cursor: pointer;
+  color: var(--ink-2);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity var(--dur-fast),
+    color var(--dur-fast);
+}
+
+.muteButton:hover,
+.muteButton.muted {
+  color: var(--ink);
+  background: rgba(var(--ink-raw, 44, 40, 33), 0.06);
 }
 
 .syncButton {
